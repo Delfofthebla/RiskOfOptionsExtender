@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using BepInEx;
@@ -7,6 +8,7 @@ using BepInEx.Configuration;
 using RiskOfOptions;
 using RiskOfOptions.OptionConfigs;
 using RiskOfOptions.Options;
+using RiskOfOptionsExtender.Discovery;
 using PluginInfo = BepInEx.PluginInfo;
 
 namespace RiskOfOptionsExtender;
@@ -15,37 +17,43 @@ internal sealed class ExtenderSettings
 {
     private const string ModListSection = "Mod List";
     private const string FillInSection = "Fill In Missing Options";
+    private const string SkipToggleSection = "Skip";
 
-    private readonly ConfigFile _config;
     private readonly ConfigEntry<string> _pinnedMods;
+    private readonly ConfigEntry<string> _skippedMods;
     private readonly HashSet<string> _pinnedGuids;
-    private readonly Dictionary<string, ConfigEntry<bool>> _fillInToggles = [];
-    private bool _staleFillInTogglesRemoved;
+    private readonly HashSet<string> _skippedGuids;
+    private readonly HashSet<string> _guidsWithSkipToggle = [];
+    private ConfigFile _skipToggleFile;
+    private int _nextSkipToggleKey;
 
     public ConfigEntry<ModSortOrder> SortOrder { get; }
 
     public ConfigEntry<bool> HideEmptyMods { get; }
 
-    public ConfigEntry<bool> FillInEnabled { get; }
+    public ConfigEntry<bool> NeverFillIn { get; }
 
     public ExtenderSettings(ConfigFile config)
     {
-        _config = config;
-
         SortOrder = config.Bind(ModListSection, "Sort Order", ModSortOrder.Alphabetical,
             "Order of the mod list. Pinned mods always come first.");
         HideEmptyMods = config.Bind(ModListSection, "Hide Empty Mods", true,
             "Hide mods that have no options to show.");
         _pinnedMods = config.Bind(ModListSection, "Pinned Mods", "",
             "GUIDs of pinned mods, separated by commas. Pin mods with the star on their row in the mod list.");
-        FillInEnabled = config.Bind(FillInSection, "Enabled", true,
-            "Add the options mods leave out of this menu. Turn off to never fill in missing options for any mod.");
+        NeverFillIn = config.Bind(FillInSection, "Never Fill In Missing Options", false,
+            "Don't add the options mods leave out of this menu, for any mod.");
+        _skippedMods = config.Bind(FillInSection, "Skipped Mods", "",
+            "GUIDs of mods whose missing options are not added, separated by commas. Set with the \"Skip\" checkboxes in this mod's page.");
 
-        _pinnedGuids = [.. _pinnedMods.Value.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(guid => guid.Trim())];
+        RemoveUnboundEntries(config);
+
+        _pinnedGuids = ParseGuids(_pinnedMods.Value);
+        _skippedGuids = ParseGuids(_skippedMods.Value);
 
         AddOwnOption(new ChoiceOption(SortOrder));
         AddOwnOption(new CheckBoxOption(HideEmptyMods));
-        AddOwnOption(new CheckBoxOption(FillInEnabled, new CheckBoxConfig { restartRequired = true }));
+        AddOwnOption(new CheckBoxOption(NeverFillIn, new CheckBoxConfig { restartRequired = true }));
     }
 
     public bool IsPinned(string modGuid)
@@ -63,76 +71,69 @@ internal sealed class ExtenderSettings
 
     public bool ShouldFillIn(PluginInfo plugin)
     {
-        if (!FillInEnabled.Value)
-            return false;
-
-        return !_fillInToggles.TryGetValue(plugin.Metadata.GUID, out var toggle) || toggle.Value;
+        return !NeverFillIn.Value && !_skippedGuids.Contains(plugin.Metadata.GUID);
     }
 
-    public void BindFillInToggles(IEnumerable<PluginInfo> pluginsWithMissingOptions)
+    public void AddSkipToggles(IEnumerable<PluginInfo> pluginsWithMissingOptions)
     {
         var newPlugins = pluginsWithMissingOptions
-            .Where(plugin => !_fillInToggles.ContainsKey(plugin.Metadata.GUID))
-            .OrderBy(plugin => plugin.Metadata.Name, StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
-
-        if (newPlugins.Count == 0 && _staleFillInTogglesRemoved)
-            return;
-
-        var saveOnConfigSet = _config.SaveOnConfigSet;
-        _config.SaveOnConfigSet = false;
+            .Where(plugin => !_guidsWithSkipToggle.Contains(plugin.Metadata.GUID))
+            .OrderBy(plugin => plugin.Metadata.Name, StringComparer.CurrentCultureIgnoreCase);
 
         foreach (var plugin in newPlugins)
-            BindFillInToggle(plugin);
-
-        if (!_staleFillInTogglesRemoved)
-        {
-            RemoveStaleFillInToggles();
-            _staleFillInTogglesRemoved = true;
-        }
-
-        _config.SaveOnConfigSet = saveOnConfigSet;
-        _config.Save();
+            AddSkipToggle(plugin);
     }
 
-    private void BindFillInToggle(PluginInfo plugin)
+    private void AddSkipToggle(PluginInfo plugin)
     {
         var guid = plugin.Metadata.GUID;
+        var name = plugin.Metadata.Name;
 
-        ConfigEntry<bool> toggle;
-        try
-        {
-            toggle = _config.Bind(FillInSection, guid, true, $"Add the options \"{plugin.Metadata.Name}\" doesn't put in this menu itself.");
-        }
-        catch (ArgumentException)
-        {
-            return;
-        }
-
-        _fillInToggles[guid] = toggle;
+        _skipToggleFile ??= UnsavedConfigFiles.Create("SkipToggles");
+        var key = (_nextSkipToggleKey++).ToString(CultureInfo.InvariantCulture);
+        var toggle = _skipToggleFile.Bind(SkipToggleSection, key, false, $"Don't add the options \"{name}\" leaves out of this menu.");
+        toggle.Value = _skippedGuids.Contains(guid);
+        toggle.SettingChanged += (_, _) => SetSkipped(guid, toggle.Value);
+        _guidsWithSkipToggle.Add(guid);
 
         var config = new CheckBoxConfig
         {
-            name = plugin.Metadata.Name,
+            name = $"Skip {name}",
+            category = FillInSection,
             restartRequired = true,
-            checkIfDisabled = () => !FillInEnabled.Value
+            checkIfDisabled = () => NeverFillIn.Value
         };
         AddOwnOption(new CheckBoxOption(toggle, config));
     }
 
-    // BepInEx writes entries that were read from the file but never bound back out on every save, so toggles for mods
-    // that no longer have missing options would otherwise stay in the file forever.
-    private void RemoveStaleFillInToggles()
+    private void SetSkipped(string modGuid, bool skipped)
+    {
+        if (skipped)
+            _skippedGuids.Add(modGuid);
+        else
+            _skippedGuids.Remove(modGuid);
+
+        _skippedMods.Value = string.Join(",", _skippedGuids.OrderBy(guid => guid, StringComparer.Ordinal));
+    }
+
+    // BepInEx keeps entries it read from the file but that were never bound, and writes them back on every save.
+    // Every setting this mod uses is bound above, so anything left over is from an older layout.
+    private static void RemoveUnboundEntries(ConfigFile config)
     {
         var orphanedEntries = typeof(ConfigFile)
             .GetProperty("OrphanedEntries", BindingFlags.Instance | BindingFlags.NonPublic)
-            ?.GetValue(_config) as Dictionary<ConfigDefinition, string>;
+            ?.GetValue(config) as Dictionary<ConfigDefinition, string>;
 
-        if (orphanedEntries == null)
+        if (orphanedEntries == null || orphanedEntries.Count == 0)
             return;
 
-        foreach (var definition in orphanedEntries.Keys.Where(definition => definition.Section == FillInSection).ToList())
-            orphanedEntries.Remove(definition);
+        orphanedEntries.Clear();
+        config.Save();
+    }
+
+    private static HashSet<string> ParseGuids(string commaSeparated)
+    {
+        return [.. commaSeparated.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(guid => guid.Trim())];
     }
 
     private static void AddOwnOption(BaseOption option)

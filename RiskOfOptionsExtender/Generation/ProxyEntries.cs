@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using BepInEx;
 using BepInEx.Configuration;
+using RiskOfOptionsExtender.Discovery;
 using UnityEngine;
 
 namespace RiskOfOptionsExtender.Generation;
@@ -16,11 +15,6 @@ internal static class ProxyEntries
     private static readonly Dictionary<ConfigEntryBase, ConfigEntryBase> _proxyBySource = [];
     private static ConfigFile _file;
     private static int _nextKey;
-
-    public static bool IsProxyFile(ConfigFile file)
-    {
-        return file != null && file == _file;
-    }
 
     public static ConfigEntryBase SourceOf(ConfigEntryBase proxy)
     {
@@ -85,7 +79,7 @@ internal static class ProxyEntries
 
     private static ConfigEntry<TProxy> Bind<TProxy>(ConfigEntryBase source, Func<object, TProxy> toProxy, Func<TProxy, object> toSource, AcceptableValueBase acceptableValues)
     {
-        _file ??= CreateFile();
+        _file ??= UnsavedConfigFiles.Create("Proxies");
 
         var definition = new ConfigDefinition(Section, (_nextKey++).ToString(CultureInfo.InvariantCulture));
         var description = new ConfigDescription(source.Description.Description, acceptableValues);
@@ -93,14 +87,5 @@ internal static class ProxyEntries
 
         new ProxyLink<TProxy>(source, proxy, toProxy, toSource).Start();
         return proxy;
-    }
-
-    private static ConfigFile CreateFile()
-    {
-        var path = Path.Combine(Paths.CachePath, "RiskOfOptionsExtender.Proxies.cfg");
-        if (File.Exists(path))
-            File.Delete(path);
-
-        return new ConfigFile(path, false) { SaveOnConfigSet = false };
     }
 }

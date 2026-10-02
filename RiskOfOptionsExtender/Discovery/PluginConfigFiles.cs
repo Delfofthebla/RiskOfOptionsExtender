@@ -5,7 +5,6 @@ using System.Reflection;
 using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
-using RiskOfOptionsExtender.Generation;
 
 namespace RiskOfOptionsExtender.Discovery;
 
@@ -43,7 +42,7 @@ internal static class PluginConfigFiles
 
     private static void AddRegisteredFile(ConfigFileOrigin origin, Dictionary<string, List<ConfigFile>> filesByGuid, Dictionary<Assembly, string> guidByAssembly)
     {
-        if (ProxyEntries.IsProxyFile(origin.File))
+        if (UnsavedConfigFiles.Contains(origin.File))
             return;
 
         var guid = origin.OwnerGuid;

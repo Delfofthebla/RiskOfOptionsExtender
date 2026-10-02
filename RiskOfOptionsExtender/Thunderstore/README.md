@@ -12,6 +12,12 @@ An add-on for [Risk Of Options](https://thunderstore.io/package/Rune580/Risk_Of_
 
 Settings that affect gameplay usually only matter on the host's machine.
 
+## Restart-required settings
+
+Settings that only take effect after a restart show a restart icon before their name, and say so at the end of their description. Risk Of Options' own "Restart Required!" banner still appears when you change one.
+
+Long setting names wrap onto more lines, and their row grows taller, instead of running under the setting's control.
+
 ## Mod list
 
 - **Search:** type in the box above the list to filter mods by name.
@@ -29,8 +35,8 @@ When a mod has more tabs than fit on one page, an "All Tabs" button appears at t
 |-|-|-|
 | Sort Order | Alphabetical | Order of the mod list. |
 | Hide Empty Mods | On | Hide mods with no settings to show. |
-| Fill In Missing Options: Enabled | On | Add the settings mods don't list themselves. Turn off to never fill in for any mod. Takes effect after a restart. |
-| Fill In Missing Options: per mod | On | Listed only for mods that have settings missing from the menu. Turn a mod off if its added settings cause problems. Takes effect after a restart. |
+| Never Fill In Missing Options | Off | Don't add missing settings for any mod. Takes effect after a restart. |
+| Skip *mod name* | Off | Don't add missing settings for that mod. Listed in game only for mods that have settings missing from the menu. Saved to the config file only once ticked, as a GUID in `Skipped Mods`. Takes effect after a restart. |
 
 ## Compatibility
 

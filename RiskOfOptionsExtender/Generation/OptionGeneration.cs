@@ -36,7 +36,7 @@ internal static class OptionGeneration
             .Where(plugin => HasMissingOptions(filesByGuid[plugin.Metadata.GUID], registered))
             .ToList();
 
-        RiskOfOptionsExtenderPlugin.Settings.BindFillInToggles(pluginsWithMissingOptions);
+        RiskOfOptionsExtenderPlugin.Settings.AddSkipToggles(pluginsWithMissingOptions);
 
         foreach (var plugin in pluginsWithMissingOptions.Where(RiskOfOptionsExtenderPlugin.Settings.ShouldFillIn))
             FillIn(plugin, filesByGuid[plugin.Metadata.GUID], registered);
@@ -45,6 +45,7 @@ internal static class OptionGeneration
             ModMetadata.Apply(plugin);
 
         ModMetadata.Apply(_self);
+        RestartNotes.Apply();
     }
 
     private static bool HasMissingOptions(List<ConfigFile> files, HashSet<ConfigEntryBase> registered)

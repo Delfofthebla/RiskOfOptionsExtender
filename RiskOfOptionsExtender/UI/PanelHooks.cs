@@ -6,6 +6,7 @@ using RiskOfOptions.Components.Panel;
 using RiskOfOptionsExtender.Generation;
 using RiskOfOptionsExtender.UI.CategoryPicking;
 using RiskOfOptionsExtender.UI.ModList;
+using RiskOfOptionsExtender.UI.OptionRows;
 
 namespace RiskOfOptionsExtender.UI;
 
@@ -43,6 +44,7 @@ internal static class PanelHooks
     private static void OnCategoryLoaded(Action<ModOptionPanelController, string, int> orig, ModOptionPanelController self, string modGuid, int categoryIndex)
     {
         orig(self, modGuid, categoryIndex);
+        RunGuarded("fit option names", () => OptionRowFitter.AttachToRows(self));
         RunGuarded("sync the category picker", () => CategoryPicker.SyncSelection(self, categoryIndex));
     }
 
