@@ -1,0 +1,29 @@
+<Project>
+  <PropertyGroup>
+    <ThunderstoreSourceDir>$(MSBuildProjectDirectory)\Thunderstore</ThunderstoreSourceDir>
+    <ThunderstorePackageName Condition="'$(ThunderstorePackageName)' == ''">$(AssemblyName)</ThunderstorePackageName>
+    <ProfileDeployDir>$(ProfilePluginsDir)\$(ThunderstoreTeam)-$(ThunderstorePackageName)</ProfileDeployDir>
+    <ThunderstoreStagingDir>$(MSBuildProjectDirectory)\obj\thunderstore</ThunderstoreStagingDir>
+    <ThunderstoreDistDir>$(MSBuildThisFileDirectory)dist</ThunderstoreDistDir>
+  </PropertyGroup>
+
+  <Target Name="CollectThunderstoreFiles">
+    <ItemGroup>
+      <ThunderstoreFile Include="$(ThunderstoreSourceDir)\*" />
+      <ThunderstoreFile Include="$(TargetPath)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="DeployToProfile" AfterTargets="Build" DependsOnTargets="CollectThunderstoreFiles" Condition="Exists('$(ProfilePluginsDir)')">
+    <Copy SourceFiles="@(ThunderstoreFile);$(TargetDir)$(TargetName).pdb" DestinationFolder="$(ProfileDeployDir)" SkipUnchangedFiles="true" Retries="0" ContinueOnError="WarnAndContinue" />
+    <Message Importance="high" Text="Deployed $(TargetName) to $(ProfileDeployDir)" />
+  </Target>
+
+  <Target Name="PackageThunderstore" AfterTargets="Build" DependsOnTargets="CollectThunderstoreFiles" Condition="'$(Configuration)' == 'Release'">
+    <RemoveDir Directories="$(ThunderstoreStagingDir)" />
+    <Copy SourceFiles="@(ThunderstoreFile)" DestinationFolder="$(ThunderstoreStagingDir)" />
+    <MakeDir Directories="$(ThunderstoreDistDir)" />
+    <ZipDirectory SourceDirectory="$(ThunderstoreStagingDir)" DestinationFile="$(ThunderstoreDistDir)\$(ThunderstoreTeam)-$(ThunderstorePackageName)-$(Version).zip" Overwrite="true" />
+    <Message Importance="high" Text="Packaged $(ThunderstoreDistDir)\$(ThunderstoreTeam)-$(ThunderstorePackageName)-$(Version).zip" />
+  </Target>
+</Project>

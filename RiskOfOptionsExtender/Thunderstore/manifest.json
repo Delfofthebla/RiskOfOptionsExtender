@@ -1,0 +1,10 @@
+{
+  "name": "Risk_Of_Options_Extender",
+  "version_number": "0.1.0",
+  "website_url": "",
+  "description": "Puts every mod's settings in the Risk Of Options menu, including the ones mods leave out, and adds search, sorting, pinning and a tab picker to the mod list.",
+  "dependencies": [
+    "bbepis-BepInExPack-5.4.2122",
+    "Rune580-Risk_Of_Options-2.8.6"
+  ]
+}

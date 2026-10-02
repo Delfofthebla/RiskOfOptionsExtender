@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <AssemblyName>RiskOfOptionsExtender</AssemblyName>
+        <RootNamespace>RiskOfOptionsExtender</RootNamespace>
+        <ThunderstorePackageName>Risk_Of_Options_Extender</ThunderstorePackageName>
+        <Author>Delfofthebla</Author>
+        <Version>0.1.0</Version>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3"/>
+        <PackageReference Include="BepInEx.Core" Version="5.4.21"/>
+        <PackageReference Include="RiskOfRain2.GameLibs" Version="1.4.1-r.0"/>
+        <PackageReference Include="UnityEngine.Modules" Version="2021.3.33" IncludeAssets="compile"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="RiskOfOptions" HintPath="$(ProfilePluginsDir)\Rune580-Risk_Of_Options\RiskOfOptions\RiskOfOptions.dll" Publicize="true"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\*.png" LogicalName="RiskOfOptionsExtender.%(Filename).png"/>
+    </ItemGroup>
+</Project>
