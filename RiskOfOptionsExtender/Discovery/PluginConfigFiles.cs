@@ -42,9 +42,6 @@ internal static class PluginConfigFiles
 
     private static void AddRegisteredFile(ConfigFileOrigin origin, Dictionary<string, List<ConfigFile>> filesByGuid, Dictionary<Assembly, string> guidByAssembly)
     {
-        if (UnsavedConfigFiles.Contains(origin.File))
-            return;
-
         var guid = origin.OwnerGuid;
         if (guid == null && origin.CreatingAssembly != null)
             guidByAssembly.TryGetValue(origin.CreatingAssembly, out guid);
@@ -113,7 +110,7 @@ internal static class PluginConfigFiles
 
     private static void AddDistinct(List<ConfigFile> files, ConfigFile file)
     {
-        if (file != null && !files.Contains(file))
+        if (file != null && !files.Contains(file) && !InternalConfigFiles.Contains(file))
             files.Add(file);
     }
 }
