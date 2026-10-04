@@ -1,26 +1,34 @@
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace RiskOfOptionsExtender.UI;
 
-internal static class PanelBackground
+internal sealed class PanelBackground
 {
     private static readonly string[] LayerNames = ["BlurPanel", "ImagePanel"];
 
-    public static void CopyInto(RectTransform target, Transform panelScrollView)
+    private readonly GameObject[] _layers;
+
+    private PanelBackground(GameObject[] layers)
     {
-        for (var index = 0; index < LayerNames.Length; index++)
+        _layers = layers;
+    }
+
+    public static PanelBackground Of(Transform panelScrollView)
+    {
+        return new PanelBackground(LayerNames.Select(name => panelScrollView.FindRequired(name).gameObject).ToArray());
+    }
+
+    public void CopyInto(RectTransform target)
+    {
+        for (var index = 0; index < _layers.Length; index++)
         {
-            var layer = Object.Instantiate(panelScrollView.Find(LayerNames[index]).gameObject, target);
-            layer.name = LayerNames[index];
+            var layer = Object.Instantiate(_layers[index], target);
+            layer.name = _layers[index].name;
             layer.transform.SetSiblingIndex(index);
-            UiText.Stretch((RectTransform)layer.transform, Vector2.zero, Vector2.zero);
-
-            var layoutElement = layer.GetComponent<LayoutElement>();
-            if (!layoutElement)
-                layoutElement = layer.AddComponent<LayoutElement>();
-
-            layoutElement.ignoreLayout = true;
+            ((RectTransform)layer.transform).Stretch(Vector2.zero, Vector2.zero);
+            layer.GetOrAddComponent<LayoutElement>().ignoreLayout = true;
         }
     }
 }

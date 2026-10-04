@@ -1,4 +1,4 @@
-namespace RiskOfOptionsExtender;
+namespace RiskOfOptionsExtender.Settings;
 
 internal enum ModSortOrder
 {

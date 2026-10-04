@@ -20,8 +20,7 @@ internal sealed class PopupBlocker : MonoBehaviour, IPointerDownHandler, IPointe
         var rect = (RectTransform)blockerObject.transform;
         rect.SetParent(popup, false);
         rect.SetAsFirstSibling();
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.AnchorAt(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
         rect.sizeDelta = new Vector2(CoverSize, CoverSize);
 
         blockerObject.GetComponent<Image>().color = Color.clear;

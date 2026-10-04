@@ -4,34 +4,47 @@ using UnityEngine.UI;
 
 namespace RiskOfOptionsExtender.UI.OptionRows;
 
-internal struct OriginalRowState
+internal readonly struct OriginalRowState
 {
-    public Vector2 LabelOffsetMin;
-    public Vector2 LabelOffsetMax;
-    public bool WordWrapping;
-    public TextOverflowModes OverflowMode;
-    public bool AutoSizing;
-    public float MinHeight;
-    public float PreferredHeight;
-    public Vector2 CheckboxContainerPosition;
+    private readonly Vector2 _labelOffsetMax;
+    private readonly bool _wordWrapping;
+    private readonly TextOverflowModes _overflowMode;
+    private readonly bool _autoSizing;
+    private readonly float _minHeight;
+    private readonly float _preferredHeight;
 
-    public static OriginalRowState Capture(RectTransform row, RectTransform label, TMP_Text text)
+    private OriginalRowState(RectTransform row, RectTransform label, TMP_Text text)
     {
-        var state = new OriginalRowState
-        {
-            LabelOffsetMin = label.offsetMin,
-            LabelOffsetMax = label.offsetMax,
-            WordWrapping = text.enableWordWrapping,
-            OverflowMode = text.overflowMode,
-            AutoSizing = text.enableAutoSizing
-        };
+        _labelOffsetMax = label.offsetMax;
+        _wordWrapping = text.enableWordWrapping;
+        _overflowMode = text.overflowMode;
+        _autoSizing = text.enableAutoSizing;
+        _minHeight = 0;
+        _preferredHeight = 0;
 
         if (row.TryGetComponent<LayoutElement>(out var layoutElement))
         {
-            state.MinHeight = layoutElement.minHeight;
-            state.PreferredHeight = layoutElement.preferredHeight;
+            _minHeight = layoutElement.minHeight;
+            _preferredHeight = layoutElement.preferredHeight;
         }
+    }
 
-        return state;
+    public static OriginalRowState Capture(RectTransform row, RectTransform label, TMP_Text text)
+    {
+        return new OriginalRowState(row, label, text);
+    }
+
+    public void RestoreLabel(RectTransform label, TMP_Text text)
+    {
+        label.offsetMax = _labelOffsetMax;
+        text.enableWordWrapping = _wordWrapping;
+        text.overflowMode = _overflowMode;
+        text.enableAutoSizing = _autoSizing;
+    }
+
+    public void RestoreHeight(LayoutElement layoutElement)
+    {
+        layoutElement.minHeight = _minHeight;
+        layoutElement.preferredHeight = _preferredHeight;
     }
 }

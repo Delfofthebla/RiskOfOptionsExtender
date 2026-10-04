@@ -1,11 +1,10 @@
 using System.Collections.Generic;
-using RiskOfOptions;
 using RiskOfOptions.Components.Options;
 using RiskOfOptions.Components.Panel;
+using RiskOfOptionsExtender.Resilience;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using RooAssets = RiskOfOptions.Resources.Assets;
 
 namespace RiskOfOptionsExtender.UI.OptionRows;
 
@@ -13,11 +12,6 @@ internal sealed class OptionRowFitter : MonoBehaviour
 {
     private const float GapBeforeControl = 12f;
     private const float CheckboxRightInset = 12f;
-    private const float IconSize = 26f;
-    private const float IconGap = 6f;
-    private const string RestartIconPath = "assets/RiskOfOptions/ror2RestartSymbol.png";
-
-    private static readonly Color IconColor = new(1f, 0.5f, 0.5f, 0.85f);
     private static readonly HashSet<string> DecorationNames = ["BaseOutline", "HoverOutline", "Mod Settings Indicator"];
     private static readonly HashSet<OptionRowFitter> _liveFitters = [];
 
@@ -25,12 +19,12 @@ internal sealed class OptionRowFitter : MonoBehaviour
     private RectTransform _label;
     private TMP_Text _text;
     private Image _checkbox;
-    private bool _restartRequired;
+    private FeatureGuard _guard;
     private bool _fitted;
     private OriginalRowState _original;
     private RectTransform _movedCheckboxContainer;
+    private Vector2 _checkboxContainerOriginalPosition;
     private LayoutElement _addedLayoutElement;
-    private GameObject _restartIcon;
 
     public static void RevertAll()
     {
@@ -38,18 +32,18 @@ internal sealed class OptionRowFitter : MonoBehaviour
             fitter.Revert();
     }
 
-    public static void AttachToRows(ModOptionPanelController panelController)
+    public static void AttachToRows(ModOptionPanelController panelController, FeatureGuard guard)
     {
         foreach (var row in panelController._modSettings)
         {
             if (row && !row.GetComponent<OptionRowFitter>())
-                AttachTo(row);
+                AttachTo(row, guard);
         }
     }
 
-    private static void AttachTo(ModSetting row)
+    private static void AttachTo(ModSetting row, FeatureGuard guard)
     {
-        var text = NameTextOf(row);
+        var text = row.NameText();
         if (!text)
             return;
 
@@ -58,7 +52,7 @@ internal sealed class OptionRowFitter : MonoBehaviour
         fitter._text = text;
         fitter._label = text.rectTransform;
         fitter._checkbox = row is ModSettingsBool checkboxRow ? checkboxRow.checkBox : null;
-        fitter._restartRequired = IsRestartRequired(row);
+        fitter._guard = guard;
         _liveFitters.Add(fitter);
     }
 
@@ -77,27 +71,15 @@ internal sealed class OptionRowFitter : MonoBehaviour
 
     private void RestoreRow()
     {
-        _label.offsetMin = _original.LabelOffsetMin;
-        _label.offsetMax = _original.LabelOffsetMax;
-        _text.enableWordWrapping = _original.WordWrapping;
-        _text.overflowMode = _original.OverflowMode;
-        _text.enableAutoSizing = _original.AutoSizing;
+        _original.RestoreLabel(_label, _text);
 
         if (_movedCheckboxContainer)
-            _movedCheckboxContainer.anchoredPosition = _original.CheckboxContainerPosition;
-
-        if (_restartIcon)
-            Destroy(_restartIcon);
+            _movedCheckboxContainer.anchoredPosition = _checkboxContainerOriginalPosition;
 
         if (_addedLayoutElement)
-        {
             Destroy(_addedLayoutElement);
-        }
         else if (_row.TryGetComponent<LayoutElement>(out var layoutElement))
-        {
-            layoutElement.minHeight = _original.MinHeight;
-            layoutElement.preferredHeight = _original.PreferredHeight;
-        }
+            _original.RestoreHeight(layoutElement);
 
         LayoutRebuilder.MarkLayoutForRebuild((RectTransform)_row.parent);
     }
@@ -108,6 +90,11 @@ internal sealed class OptionRowFitter : MonoBehaviour
             return;
 
         enabled = false;
+        _guard.Run("fit an option row", Fit);
+    }
+
+    private void Fit()
+    {
         _original = OriginalRowState.Capture(_row, _label, _text);
         _fitted = true;
 
@@ -117,9 +104,6 @@ internal sealed class OptionRowFitter : MonoBehaviour
         if (_label.anchorMax.x > 0.5f)
             EndLabelBeforeControls();
 
-        if (_restartRequired)
-            AddRestartIcon();
-
         FitText();
     }
 
@@ -127,16 +111,14 @@ internal sealed class OptionRowFitter : MonoBehaviour
     // few pixels from it.
     private void AlignCheckboxWithOtherControls()
     {
-        var corners = new Vector3[4];
-        _checkbox.rectTransform.GetWorldCorners(corners);
-        var checkboxRight = _row.InverseTransformPoint(corners[2]).x;
+        var checkboxRight = _row.InverseTransformPoint(_checkbox.rectTransform.WorldTopRight()).x;
         var shift = _row.rect.xMax - CheckboxRightInset - checkboxRight;
 
         var container = ChildOfRowContaining(_checkbox.transform);
         if (!container)
             return;
 
-        _original.CheckboxContainerPosition = container.anchoredPosition;
+        _checkboxContainerOriginalPosition = container.anchoredPosition;
         _movedCheckboxContainer = container;
         container.anchoredPosition += new Vector2(shift, 0);
     }
@@ -159,7 +141,7 @@ internal sealed class OptionRowFitter : MonoBehaviour
                 continue;
 
             foreach (var graphic in child.GetComponentsInChildren<Graphic>())
-                controlsLeft = Mathf.Min(controlsLeft, LeftEdgeInRow(graphic.rectTransform));
+                controlsLeft = Mathf.Min(controlsLeft, _row.InverseTransformPoint(graphic.rectTransform.WorldBottomLeft()).x);
         }
 
         if (controlsLeft == float.MaxValue)
@@ -169,36 +151,6 @@ internal sealed class OptionRowFitter : MonoBehaviour
         var allowedRight = controlsLeft - GapBeforeControl;
         if (allowedRight < labelRight)
             _label.offsetMax = new Vector2(_label.offsetMax.x - (labelRight - allowedRight), _label.offsetMax.y);
-    }
-
-    private float LeftEdgeInRow(RectTransform rect)
-    {
-        var corners = new Vector3[4];
-        rect.GetWorldCorners(corners);
-        return _row.InverseTransformPoint(corners[0]).x;
-    }
-
-    private void AddRestartIcon()
-    {
-        _label.offsetMin = new Vector2(_label.offsetMin.x + IconSize + IconGap, _label.offsetMin.y);
-
-        var iconObject = new GameObject("Restart Required Icon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        iconObject.layer = gameObject.layer;
-        _restartIcon = iconObject;
-
-        var rect = (RectTransform)iconObject.transform;
-        rect.SetParent(_label, false);
-        rect.anchorMin = new Vector2(0, 0.5f);
-        rect.anchorMax = new Vector2(0, 0.5f);
-        rect.pivot = new Vector2(0, 0.5f);
-        rect.sizeDelta = new Vector2(IconSize, IconSize);
-        rect.anchoredPosition = new Vector2(-(IconSize + IconGap), 0);
-
-        var image = iconObject.GetComponent<Image>();
-        image.sprite = RooAssets.Load<Sprite>(RestartIconPath);
-        image.preserveAspect = true;
-        image.color = IconColor;
-        image.raycastTarget = false;
     }
 
     private void FitText()
@@ -215,40 +167,12 @@ internal sealed class OptionRowFitter : MonoBehaviour
 
     private void GrowRow(float extraHeight)
     {
-        var layoutElement = _row.GetComponent<LayoutElement>();
-        if (!layoutElement)
-        {
-            layoutElement = _row.gameObject.AddComponent<LayoutElement>();
-            _addedLayoutElement = layoutElement;
-        }
+        if (!_row.TryGetComponent<LayoutElement>(out var layoutElement))
+            layoutElement = _addedLayoutElement = _row.gameObject.AddComponent<LayoutElement>();
 
         var height = _row.rect.height + extraHeight;
         layoutElement.minHeight = Mathf.Max(layoutElement.minHeight, height);
         layoutElement.preferredHeight = Mathf.Max(layoutElement.preferredHeight, height);
         LayoutRebuilder.MarkLayoutForRebuild((RectTransform)_row.parent);
-    }
-
-    private static TMP_Text NameTextOf(ModSetting row)
-    {
-        if (!row.nameLabel)
-            return null;
-
-        var text = row.nameLabel.GetComponent<TMP_Text>();
-        return text ? text : row.nameLabel.GetComponentInChildren<TMP_Text>(true);
-    }
-
-    private static bool IsRestartRequired(ModSetting row)
-    {
-        if (string.IsNullOrEmpty(row.settingToken))
-            return false;
-
-        try
-        {
-            return ModSettingsManager.OptionCollection.GetOption(row.settingToken).GetConfig().restartRequired;
-        }
-        catch (KeyNotFoundException)
-        {
-            return false;
-        }
     }
 }

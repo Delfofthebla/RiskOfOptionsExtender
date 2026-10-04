@@ -5,7 +5,9 @@ using System.Text.RegularExpressions;
 using RiskOfOptions;
 using RiskOfOptions.Components.Panel;
 using RiskOfOptions.Components.RuntimePrefabs;
+using RiskOfOptions.Containers;
 using RiskOfOptionsExtender.Generation;
+using RiskOfOptionsExtender.Settings;
 using RoR2;
 using RoR2.UI;
 using UnityEngine;
@@ -15,20 +17,20 @@ namespace RiskOfOptionsExtender.UI.ModList;
 internal sealed class ModListOrganizer : MonoBehaviour
 {
     private static readonly Regex RichTextTag = new("<.*?>", RegexOptions.Compiled);
+    private static readonly HashSet<ModListOrganizer> _liveOrganizers = [];
 
     private readonly List<ModListEntry> _entries = [];
     private readonly List<PinToggle> _pins = [];
     private ModOptionsPanelPrefab _panel;
     private HGHeaderNavigationController _navigation;
     private List<HGHeaderNavigationController.Header> _originalHeaders;
+    private ExtenderSettings _settings;
+    private ModListGuards _guards;
     private ModListToolbar _toolbar;
+    private bool _tweaksShown;
     private string _filter = "";
 
-    private bool TweaksShown => _toolbar;
-
-    private static ExtenderSettings Settings => RiskOfOptionsExtenderPlugin.Settings;
-
-    public static void AttachOrRefresh(ModOptionPanelController panelController)
+    public static void AttachOrRefresh(ModOptionPanelController panelController, ExtenderSettings settings, ModListGuards guards)
     {
         var panel = panelController._panel;
         if (panel == null || !panel.ModListPanel)
@@ -36,10 +38,7 @@ internal sealed class ModListOrganizer : MonoBehaviour
 
         var organizer = panel.ModListPanel.GetComponent<ModListOrganizer>();
         if (!organizer)
-        {
-            organizer = panel.ModListPanel.AddComponent<ModListOrganizer>();
-            organizer.Initialize(panel);
-        }
+            organizer = Create(panel, settings, guards);
 
         organizer.Refresh();
     }
@@ -55,70 +54,111 @@ internal sealed class ModListOrganizer : MonoBehaviour
             organizer.ReleaseList();
     }
 
-    public void SetFilter(string filter)
+    public static void RemoveAllToolbars()
     {
-        _filter = filter?.Trim() ?? "";
-        Apply();
-    }
-
-    public void Apply()
-    {
-        var selectedButton = SelectedButton();
-        var visibleEntries = SortEntries(_entries.Where(IsVisible)).ToList();
-        var visibleSet = new HashSet<ModListEntry>(visibleEntries);
-
-        foreach (var entry in _entries)
-            entry.Button.gameObject.SetActive(visibleSet.Contains(entry));
-
-        for (var index = 0; index < visibleEntries.Count; index++)
-            visibleEntries[index].Button.transform.SetSiblingIndex(index);
-
-        _navigation.headers = visibleEntries.Select(entry => entry.Header).ToList();
-        _navigation.currentHeaderIndex = visibleEntries.FindIndex(entry => entry.Button == selectedButton);
-    }
-
-    private void Initialize(ModOptionsPanelPrefab panel)
-    {
-        _panel = panel;
-        _navigation = panel.ModListPanel.GetComponent<HGHeaderNavigationController>();
-        _originalHeaders = _navigation.headers.ToList();
-
-        foreach (var header in _originalHeaders)
+        foreach (var organizer in _liveOrganizers.ToList())
         {
-            if (header.headerButton is ModListButton button)
-                _entries.Add(new ModListEntry(button, header, DisplayNameOf(button.modGuid), IsEmpty(button.modGuid)));
+            organizer.RemoveToolbar();
+            organizer.ReorderGuarded();
         }
+    }
+
+    public static void RemoveAllPins()
+    {
+        foreach (var organizer in _liveOrganizers.ToList())
+            organizer.RemovePins();
+    }
+
+    public bool IsPinned(string modGuid)
+    {
+        return _settings.PinnedMods.Contains(modGuid);
+    }
+
+    public void TogglePin(string modGuid)
+    {
+        _settings.PinnedMods.Toggle(modGuid);
+        ReorderGuarded();
+    }
+
+    private static ModListOrganizer Create(ModOptionsPanelPrefab panel, ExtenderSettings settings, ModListGuards guards)
+    {
+        var navigation = panel.ModListPanel.GetRequiredComponent<HGHeaderNavigationController>();
+        var originalHeaders = navigation.headers.ToList();
+        var entries = originalHeaders
+            .Where(header => header.headerButton is ModListButton)
+            .Select(EntryOf)
+            .ToList();
+
+        var organizer = panel.ModListPanel.AddComponent<ModListOrganizer>();
+        organizer._panel = panel;
+        organizer._navigation = navigation;
+        organizer._originalHeaders = originalHeaders;
+        organizer._entries.AddRange(entries);
+        organizer._settings = settings;
+        organizer._guards = guards;
+        _liveOrganizers.Add(organizer);
+
+        settings.SortOrder.SettingChanged += organizer.OnSortOrderChanged;
+        return organizer;
+    }
+
+    private static ModListEntry EntryOf(HGHeaderNavigationController.Header header)
+    {
+        var button = (ModListButton)header.headerButton;
+        var collection = ModSettingsManager.OptionCollection[button.modGuid];
+        return new ModListEntry(button, header, DisplayNameOf(collection), RegisteredEntries.CountOptions(collection) == 0);
     }
 
     private void Refresh()
     {
-        if (Settings.ModListTweaks.Value)
+        if (_settings.ModListTweaks.Value)
             ShowTweaks();
         else
             HideTweaks();
 
-        Apply();
+        Reorder();
     }
 
     private void ShowTweaks()
     {
-        if (TweaksShown)
-            return;
-
-        _toolbar = ModListToolbar.Create(_panel, this);
-        foreach (var entry in _entries)
-            _pins.Add(PinToggle.AddTo(entry.Button, this));
+        _tweaksShown = true;
+        _guards.Toolbar.Run("add the mod list search and sort bar", AddToolbar);
+        _guards.Pins.Run("add the mod list pin stars", AddPins);
     }
 
     private void HideTweaks()
     {
-        if (!TweaksShown)
+        _tweaksShown = false;
+        RemoveToolbar();
+        RemovePins();
+    }
+
+    private void AddToolbar()
+    {
+        if (!_toolbar)
+            _toolbar = ModListToolbar.Create(_panel, _settings.SortOrder, SetFilter);
+    }
+
+    private void AddPins()
+    {
+        if (_pins.Count > 0)
             return;
 
-        _toolbar.Remove();
+        foreach (var entry in _entries)
+            _pins.Add(PinToggle.AddTo(entry.Button, this));
+    }
+
+    private void RemoveToolbar()
+    {
+        if (_toolbar)
+            _toolbar.Remove();
+
         _toolbar = null;
         _filter = "";
+    }
 
+    private void RemovePins()
+    {
         foreach (var pin in _pins)
         {
             if (pin)
@@ -132,7 +172,7 @@ internal sealed class ModListOrganizer : MonoBehaviour
     {
         HideTweaks();
 
-        var selectedButton = SelectedButton();
+        var selectedButton = _navigation.SelectedButton();
         for (var index = 0; index < _entries.Count; index++)
         {
             _entries[index].Button.gameObject.SetActive(true);
@@ -144,39 +184,67 @@ internal sealed class ModListOrganizer : MonoBehaviour
         Destroy(this);
     }
 
-    private void OnEnable()
+    private void SetFilter(string filter)
     {
-        Settings.SortOrder.SettingChanged += OnSortOrderChanged;
-
-        if (_navigation)
-            Apply();
+        _filter = filter?.Trim() ?? "";
+        ReorderGuarded();
     }
 
-    private void OnDisable()
+    private void ReorderGuarded()
     {
-        Settings.SortOrder.SettingChanged -= OnSortOrderChanged;
+        _guards.Organizer.Run("organize the mod list", Reorder);
+    }
+
+    private void Reorder()
+    {
+        var selectedButton = _navigation.SelectedButton();
+        var visibleEntries = SortEntries(_entries.Where(IsVisible)).ToList();
+        var visibleSet = new HashSet<ModListEntry>(visibleEntries);
+
+        foreach (var entry in _entries)
+            entry.Button.gameObject.SetActive(visibleSet.Contains(entry));
+
+        for (var index = 0; index < visibleEntries.Count; index++)
+            visibleEntries[index].Button.transform.SetSiblingIndex(index);
+
+        _navigation.headers = visibleEntries.Select(entry => entry.Header).ToList();
+        _navigation.currentHeaderIndex = visibleEntries.FindIndex(entry => entry.Button == selectedButton);
+    }
+
+    private void OnEnable()
+    {
+        if (_navigation)
+            ReorderGuarded();
+    }
+
+    private void OnDestroy()
+    {
+        _liveOrganizers.Remove(this);
+
+        if (_settings != null)
+            _settings.SortOrder.SettingChanged -= OnSortOrderChanged;
     }
 
     private void OnSortOrderChanged(object sender, EventArgs args)
     {
-        Apply();
+        ReorderGuarded();
     }
 
     private IEnumerable<ModListEntry> SortEntries(IEnumerable<ModListEntry> entries)
     {
-        if (!TweaksShown)
+        if (!_tweaksShown)
             return entries;
 
-        var pinnedFirst = entries.OrderByDescending(entry => Settings.IsPinned(entry.ModGuid));
+        var pinnedFirst = entries.OrderByDescending(entry => IsPinned(entry.ModGuid));
 
-        return Settings.SortOrder.Value == ModSortOrder.ReverseAlphabetical
+        return _settings.SortOrder.Value == ModSortOrder.ReverseAlphabetical
             ? pinnedFirst.ThenByDescending(entry => entry.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             : pinnedFirst.ThenBy(entry => entry.DisplayName, StringComparer.CurrentCultureIgnoreCase);
     }
 
     private bool IsVisible(ModListEntry entry)
     {
-        if (entry.IsEmpty && Settings.HideEmptyMods.Value)
+        if (entry.IsEmpty && _settings.HideEmptyMods.Value)
             return false;
 
         return _filter.Length == 0
@@ -184,21 +252,8 @@ internal sealed class ModListOrganizer : MonoBehaviour
             || entry.ModGuid.IndexOf(_filter, StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
-    private MPButton SelectedButton()
+    private static string DisplayNameOf(OptionCollection collection)
     {
-        var index = _navigation.currentHeaderIndex;
-        var headers = _navigation.headers;
-        return index >= 0 && index < headers.Count ? headers[index].headerButton : null;
-    }
-
-    private static string DisplayNameOf(string modGuid)
-    {
-        var name = Language.GetString(ModSettingsManager.OptionCollection[modGuid].NameToken);
-        return RichTextTag.Replace(name, "").Trim();
-    }
-
-    private static bool IsEmpty(string modGuid)
-    {
-        return RegisteredEntries.CountOptions(ModSettingsManager.OptionCollection[modGuid]) == 0;
+        return RichTextTag.Replace(Language.GetString(collection.NameToken), "").Trim();
     }
 }

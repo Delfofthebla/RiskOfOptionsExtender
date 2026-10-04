@@ -5,6 +5,7 @@ using System.Reflection;
 using BepInEx;
 using BepInEx.Configuration;
 using MonoMod.RuntimeDetour;
+using RiskOfOptionsExtender.Resilience;
 
 namespace RiskOfOptionsExtender.Discovery;
 
@@ -25,7 +26,9 @@ internal static class ConfigFileRegistry
 
     public static void Install()
     {
-        var constructor = typeof(ConfigFile).GetConstructor([typeof(string), typeof(bool), typeof(BepInPlugin)]);
+        var constructor = typeof(ConfigFile).GetConstructor([typeof(string), typeof(bool), typeof(BepInPlugin)])
+            ?? throw new IncompatibilityException("BepInEx's ConfigFile(string, bool, BepInPlugin) constructor no longer exists.");
+
         _constructorHook = new Hook(constructor, RecordOrigin);
     }
 
@@ -33,9 +36,16 @@ internal static class ConfigFileRegistry
     {
         orig(self, configPath, saveOnInit, ownerMetadata);
 
-        var origin = new ConfigFileOrigin(self, ownerMetadata?.GUID, FindCreatingAssembly());
-        lock (_lock)
-            _origins.Add(origin);
+        try
+        {
+            var origin = new ConfigFileOrigin(self, ownerMetadata?.GUID, FindCreatingAssembly());
+            lock (_lock)
+                _origins.Add(origin);
+        }
+        catch (Exception exception)
+        {
+            RiskOfOptionsExtenderPlugin.Log.LogDebug($"Could not record who created {configPath}: {exception}");
+        }
     }
 
     private static Assembly FindCreatingAssembly()

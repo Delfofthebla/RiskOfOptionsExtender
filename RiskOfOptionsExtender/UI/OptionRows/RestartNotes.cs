@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using RiskOfOptions;
 using RiskOfOptions.Lib;
+using RiskOfOptionsExtender.Generation;
 
-namespace RiskOfOptionsExtender.Generation;
+namespace RiskOfOptionsExtender.UI.OptionRows;
 
 internal static class RestartNotes
 {

@@ -4,6 +4,8 @@ using System.IO;
 using BepInEx;
 using RiskOfOptions;
 using RiskOfOptions.Containers;
+using RiskOfOptionsExtender.Resilience;
+using RiskOfOptionsExtender.UI;
 using RoR2;
 using UnityEngine;
 using Path = System.IO.Path;
@@ -24,11 +26,18 @@ internal static class ModMetadata
         _appliedGuids.Add(guid);
         var collection = ModSettingsManager.OptionCollection[guid];
 
-        if (!collection.icon && !collection.iconPrefab)
-            ApplyIcon(plugin, collection);
+        try
+        {
+            if (!collection.icon && !collection.iconPrefab)
+                ApplyIcon(plugin, collection);
 
-        if (Language.IsTokenInvalid(collection.DescriptionToken))
-            ApplyDescription(plugin, collection);
+            if (Language.IsTokenInvalid(collection.DescriptionToken))
+                ApplyDescription(plugin, collection);
+        }
+        catch (Exception exception) when (!IncompatibilityException.Indicates(exception))
+        {
+            RiskOfOptionsExtenderPlugin.Log.LogDebug($"Could not add the icon or description of {plugin.Metadata.Name}: {exception.Message}");
+        }
     }
 
     private static void ApplyIcon(PluginInfo plugin, OptionCollection collection)
@@ -36,12 +45,9 @@ internal static class ModMetadata
         if (!TryFindPackageFile(plugin, "icon.png", out var path))
             return;
 
-        var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-        if (!texture.LoadImage(File.ReadAllBytes(path)))
-            return;
-
-        var sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-        ModSettingsManager.SetModIcon(sprite, collection.ModGuid, collection.ModName);
+        var sprite = Sprites.FromPng(File.ReadAllBytes(path));
+        if (sprite)
+            ModSettingsManager.SetModIcon(sprite, collection.ModGuid, collection.ModName);
     }
 
     private static void ApplyDescription(PluginInfo plugin, OptionCollection collection)
@@ -49,16 +55,9 @@ internal static class ModMetadata
         if (!TryFindPackageFile(plugin, "manifest.json", out var path))
             return;
 
-        try
-        {
-            var description = JsonUtility.FromJson<ThunderstoreManifest>(File.ReadAllText(path))?.description;
-            if (!string.IsNullOrEmpty(description))
-                ModSettingsManager.SetModDescription(description, collection.ModGuid, collection.ModName);
-        }
-        catch (ArgumentException exception)
-        {
-            RiskOfOptionsExtenderPlugin.Log.LogDebug($"Could not read {path}: {exception.Message}");
-        }
+        var description = JsonUtility.FromJson<ThunderstoreManifest>(File.ReadAllText(path))?.description;
+        if (!string.IsNullOrEmpty(description))
+            ModSettingsManager.SetModDescription(description, collection.ModGuid, collection.ModName);
     }
 
     private static bool TryFindPackageFile(PluginInfo plugin, string fileName, out string path)

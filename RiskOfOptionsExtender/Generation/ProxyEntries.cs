@@ -11,6 +11,9 @@ internal static class ProxyEntries
 {
     private const string Section = "Proxies";
 
+    private static readonly HashSet<Type> SmallIntegers = [typeof(sbyte), typeof(byte), typeof(short), typeof(ushort)];
+    private static readonly HashSet<Type> LargeIntegers = [typeof(uint), typeof(long), typeof(ulong)];
+
     private static readonly Dictionary<ConfigEntryBase, ConfigEntryBase> _sourceByProxy = [];
     private static readonly Dictionary<ConfigEntryBase, ConfigEntryBase> _proxyBySource = [];
     private static ConfigFile _file;
@@ -21,43 +24,49 @@ internal static class ProxyEntries
         return _sourceByProxy.TryGetValue(proxy, out var source) ? source : null;
     }
 
+    public static bool CanProxy(ConfigEntryBase source)
+    {
+        return BinderFor(source) != null;
+    }
+
     public static ConfigEntryBase GetOrCreate(ConfigEntryBase source)
     {
         if (_proxyBySource.TryGetValue(source, out var existing))
             return existing;
 
-        var proxy = Create(source);
-        if (proxy == null)
+        var bind = BinderFor(source);
+        if (bind == null)
             return null;
 
+        var proxy = bind(source);
         _proxyBySource[source] = proxy;
         _sourceByProxy[proxy] = source;
         return proxy;
     }
 
-    private static ConfigEntryBase Create(ConfigEntryBase source)
+    private static Func<ConfigEntryBase, ConfigEntryBase> BinderFor(ConfigEntryBase source)
     {
         var type = source.SettingType;
 
         if (type == typeof(double) || type == typeof(decimal))
-            return CreateFloat(source);
+            return BindFloat;
 
-        if (type == typeof(sbyte) || type == typeof(byte) || type == typeof(short) || type == typeof(ushort))
-            return CreateInt(source);
+        if (SmallIntegers.Contains(type))
+            return BindInt;
 
-        if ((type == typeof(uint) || type == typeof(long) || type == typeof(ulong)) && NumericRange.Of(source)?.FitsInInt == true)
-            return CreateInt(source);
+        if (LargeIntegers.Contains(type) && NumericRange.Of(source)?.FitsInInt == true)
+            return BindInt;
 
         if (type == typeof(KeyCode))
-            return Bind(source, value => new KeyboardShortcut((KeyCode)value), shortcut => shortcut.MainKey, null);
+            return BindKeyCode;
 
         if (TomlTypeConverter.CanConvert(type))
-            return Bind(source, value => TomlTypeConverter.ConvertToString(value, type), text => TomlTypeConverter.ConvertToValue(text, type), null);
+            return BindText;
 
         return null;
     }
 
-    private static ConfigEntryBase CreateFloat(ConfigEntryBase source)
+    private static ConfigEntryBase BindFloat(ConfigEntryBase source)
     {
         var type = source.SettingType;
         var range = NumericRange.Of(source);
@@ -67,7 +76,7 @@ internal static class ProxyEntries
             number => Convert.ChangeType(number.ToString(CultureInfo.InvariantCulture), type, CultureInfo.InvariantCulture), acceptableValues);
     }
 
-    private static ConfigEntryBase CreateInt(ConfigEntryBase source)
+    private static ConfigEntryBase BindInt(ConfigEntryBase source)
     {
         var type = source.SettingType;
         var range = NumericRange.Of(source);
@@ -75,6 +84,17 @@ internal static class ProxyEntries
 
         return Bind(source, value => Convert.ToInt32(value, CultureInfo.InvariantCulture),
             number => Convert.ChangeType(number, type, CultureInfo.InvariantCulture), acceptableValues);
+    }
+
+    private static ConfigEntryBase BindKeyCode(ConfigEntryBase source)
+    {
+        return Bind(source, value => new KeyboardShortcut((KeyCode)value), shortcut => shortcut.MainKey, null);
+    }
+
+    private static ConfigEntryBase BindText(ConfigEntryBase source)
+    {
+        var type = source.SettingType;
+        return Bind(source, value => TomlTypeConverter.ConvertToString(value, type), text => TomlTypeConverter.ConvertToValue(text, type), null);
     }
 
     private static ConfigEntry<TProxy> Bind<TProxy>(ConfigEntryBase source, Func<object, TProxy> toProxy, Func<TProxy, object> toSource, AcceptableValueBase acceptableValues)
@@ -85,7 +105,16 @@ internal static class ProxyEntries
         var description = new ConfigDescription(source.Description.Description, acceptableValues);
         var proxy = _file.Bind(definition, toProxy(source.DefaultValue), description);
 
-        new ProxyLink<TProxy>(source, proxy, toProxy, toSource).Start();
+        try
+        {
+            new ProxyLink<TProxy>(source, proxy, toProxy, toSource).Start();
+        }
+        catch
+        {
+            _file.Remove(definition);
+            throw;
+        }
+
         return proxy;
     }
 }

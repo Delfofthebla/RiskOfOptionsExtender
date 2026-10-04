@@ -30,6 +30,9 @@ internal sealed class CategoryPickerPopup : MonoBehaviour
 
     public static CategoryPickerPopup Create(Transform parent, RectTransform anchorButton, TMP_Text styleSource, Transform panelScrollView, Action<int> onSelected)
     {
+        var background = PanelBackground.Of(panelScrollView);
+        var scrollbarTemplate = panelScrollView.FindRequired("Scrollbar Vertical").gameObject;
+
         var root = new GameObject("Category Picker Popup", typeof(RectTransform));
         root.SetActive(false);
         root.layer = parent.gameObject.layer;
@@ -39,7 +42,7 @@ internal sealed class CategoryPickerPopup : MonoBehaviour
         popup._anchorButton = anchorButton;
         popup._styleSource = styleSource;
         popup._onSelected = onSelected;
-        popup.Build(panelScrollView);
+        popup.Build(background, scrollbarTemplate);
         return popup;
     }
 
@@ -74,24 +77,22 @@ internal sealed class CategoryPickerPopup : MonoBehaviour
         _blocker.DrawBelow(SortingOrder);
     }
 
-    private void Build(Transform panelScrollView)
+    private void Build(PanelBackground background, GameObject scrollbarTemplate)
     {
         _rect = (RectTransform)transform;
-        _rect.anchorMin = new Vector2(0.5f, 0.5f);
-        _rect.anchorMax = new Vector2(0.5f, 0.5f);
-        _rect.pivot = new Vector2(0, 1);
+        _rect.AnchorAt(new Vector2(0.5f, 0.5f), new Vector2(0, 1));
 
         _canvas = gameObject.AddComponent<Canvas>();
         gameObject.AddComponent<GraphicRaycaster>();
         gameObject.AddComponent<Image>().color = Color.clear;
-        PanelBackground.CopyInto(_rect, panelScrollView);
+        background.CopyInto(_rect);
         _blocker = PopupBlocker.Create(_rect, Close);
 
         var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
         viewport.layer = gameObject.layer;
         var viewportRect = (RectTransform)viewport.transform;
         viewportRect.SetParent(_rect, false);
-        UiText.Stretch(viewportRect, new Vector2(Padding, Padding), new Vector2(Padding + ScrollbarWidth, Padding));
+        viewportRect.Stretch(new Vector2(Padding, Padding), new Vector2(Padding + ScrollbarWidth, Padding));
 
         var content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
         content.layer = gameObject.layer;
@@ -118,7 +119,7 @@ internal sealed class CategoryPickerPopup : MonoBehaviour
         _scroll.inertia = false;
         _scroll.scrollSensitivity = 40f;
 
-        AddScrollbar(panelScrollView.Find("Scrollbar Vertical").gameObject);
+        AddScrollbar(scrollbarTemplate);
     }
 
     private void AddScrollbar(GameObject scrollbarTemplate)
@@ -154,9 +155,7 @@ internal sealed class CategoryPickerPopup : MonoBehaviour
 
     private void PlaceBelowButton()
     {
-        var corners = new Vector3[4];
-        _anchorButton.GetWorldCorners(corners);
-        _rect.position = corners[0];
+        _rect.position = _anchorButton.WorldBottomLeft();
         _rect.anchoredPosition -= new Vector2(0, GapBelowButton);
     }
 

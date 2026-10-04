@@ -28,7 +28,7 @@ internal static class SearchField
         viewport.layer = root.layer;
         viewport.transform.SetParent(root.transform, false);
         var viewportRect = (RectTransform)viewport.transform;
-        UiText.Stretch(viewportRect, new Vector2(12, 4), new Vector2(12, 4));
+        viewportRect.Stretch(new Vector2(12, 4), new Vector2(12, 4));
 
         var text = UiText.Create("Text", viewportRect, styleSource, FontSize, Color.white);
         var placeholder = UiText.Create("Placeholder", viewportRect, styleSource, FontSize, PlaceholderColor);

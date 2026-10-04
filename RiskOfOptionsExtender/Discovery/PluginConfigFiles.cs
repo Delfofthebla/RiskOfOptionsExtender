@@ -60,21 +60,39 @@ internal static class PluginConfigFiles
         var instance = plugin.Instance;
         AddDistinct(files, instance.Config);
 
-        var type = instance.GetType();
-        foreach (var field in type.GetFields(AnyMember))
-            AddDistinct(files, ConfigFileOf(field.FieldType, () => field.GetValue(field.IsStatic ? null : instance)));
-
-        foreach (var property in type.GetProperties(AnyMember).Where(property => property.GetIndexParameters().Length == 0 && property.CanRead))
-            AddDistinct(files, ConfigFileOf(property.PropertyType, () => property.GetValue(instance)));
-    }
-
-    private static ConfigFile ConfigFileOf(Type memberType, Func<object> readValue)
-    {
-        if (!typeof(ConfigFile).IsAssignableFrom(memberType) && !typeof(ConfigEntryBase).IsAssignableFrom(memberType))
-            return null;
-
         try
         {
+            AddMemberFiles(instance, files);
+        }
+        catch (Exception exception)
+        {
+            RiskOfOptionsExtenderPlugin.Log.LogDebug($"Could not scan {plugin.Metadata.Name} for config files: {exception.Message}");
+        }
+    }
+
+    private static void AddMemberFiles(BaseUnityPlugin instance, List<ConfigFile> files)
+    {
+        var type = instance.GetType();
+        foreach (var field in type.GetFields(AnyMember))
+            AddDistinct(files, ConfigFileOf(() => field.FieldType, () => field.GetValue(field.IsStatic ? null : instance)));
+
+        foreach (var property in type.GetProperties(AnyMember))
+            AddDistinct(files, ConfigFileOf(() => IsPlainGetter(property) ? property.PropertyType : null, () => property.GetValue(instance)));
+    }
+
+    private static bool IsPlainGetter(PropertyInfo property)
+    {
+        return property.CanRead && property.GetIndexParameters().Length == 0;
+    }
+
+    // A plugin's members can use types from optional mods that aren't installed, which throws as soon as they're inspected.
+    private static ConfigFile ConfigFileOf(Func<Type> memberType, Func<object> readValue)
+    {
+        try
+        {
+            if (!IsConfigType(memberType()))
+                return null;
+
             return readValue() switch
             {
                 ConfigFile file => file,
@@ -86,6 +104,11 @@ internal static class PluginConfigFiles
         {
             return null;
         }
+    }
+
+    private static bool IsConfigType(Type type)
+    {
+        return type != null && (typeof(ConfigFile).IsAssignableFrom(type) || typeof(ConfigEntryBase).IsAssignableFrom(type));
     }
 
     private static void AddDistinct(List<ConfigFile> files, ConfigFile file)

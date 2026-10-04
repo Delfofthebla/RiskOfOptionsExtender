@@ -1,12 +1,11 @@
 using System;
 using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace RiskOfOptionsExtender.UI.CategoryPicking;
 
-internal sealed class PickerItem : MonoBehaviour, IPointerDownHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
+internal sealed class PickerItem : PointerTarget
 {
     private const float CategoryHeight = 40f;
     private const float HeaderHeight = 32f;
@@ -22,7 +21,6 @@ internal sealed class PickerItem : MonoBehaviour, IPointerDownHandler, IPointerC
 
     private Image _background;
     private Action<int> _onSelected;
-    private bool _hovered;
     private bool _current;
 
     public int CategoryIndex { get; private set; }
@@ -62,35 +60,17 @@ internal sealed class PickerItem : MonoBehaviour, IPointerDownHandler, IPointerC
         Refresh();
     }
 
-    // Unity only completes a click on the object that also received the press.
-    public void OnPointerDown(PointerEventData eventData)
+    protected override void OnLeftClick()
     {
+        _onSelected(CategoryIndex);
     }
 
-    public void OnPointerClick(PointerEventData eventData)
-    {
-        if (eventData.button == PointerEventData.InputButton.Left)
-            _onSelected(CategoryIndex);
-    }
-
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        _hovered = true;
-        Refresh();
-    }
-
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        _hovered = false;
-        Refresh();
-    }
-
-    private void Refresh()
+    protected override void Refresh()
     {
         if (_current)
             _background.color = CurrentColor;
         else
-            _background.color = _hovered ? HoveredColor : IdleColor;
+            _background.color = IsHovered ? HoveredColor : IdleColor;
     }
 
     private static GameObject CreateRow(string name, Transform parent, float height)

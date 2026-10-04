@@ -2,7 +2,9 @@ using BepInEx;
 using BepInEx.Logging;
 using RiskOfOptionsExtender.Discovery;
 using RiskOfOptionsExtender.Generation;
-using RiskOfOptionsExtender.UI;
+using RiskOfOptionsExtender.Resilience;
+using RiskOfOptionsExtender.Settings;
+using RiskOfOptionsExtender.UI.Features;
 
 namespace RiskOfOptionsExtender;
 
@@ -21,15 +23,15 @@ public class RiskOfOptionsExtenderPlugin : BaseUnityPlugin
 
     internal static ManualLogSource Log { get; private set; }
 
-    internal static ExtenderSettings Settings { get; private set; }
-
     private void Awake()
     {
         Log = Logger;
-        ConfigFileRegistry.Install();
-        Settings = new ExtenderSettings(Config);
+        new FeatureGuard("config file discovery").Run("hook the ConfigFile constructor", ConfigFileRegistry.Install);
 
-        OptionGeneration.Initialize(Info);
-        PanelHooks.Install();
+        var settings = new ExtenderSettings(Config);
+        OptionGeneration.Initialize(Info, settings);
+
+        new FeatureGuard("this mod's own options page").Run("add this mod's options to the menu", settings.AddToMenu);
+        PanelHooks.Install(settings);
     }
 }

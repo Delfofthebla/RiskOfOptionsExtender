@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using RiskOfOptions.Components.Panel;
 using RoR2.UI;
 
-namespace RiskOfOptionsExtender.UI;
+namespace RiskOfOptionsExtender.UI.Features;
 
 internal static class LivePanels
 {
@@ -29,11 +29,7 @@ internal static class LivePanels
         if (prefab == null || !prefab.CategoryHeader || !prefab.CategoryHeader.activeSelf)
             return null;
 
-        var navigation = prefab.ModListPanel.GetComponent<HGHeaderNavigationController>();
-        var index = navigation.currentHeaderIndex;
-        if (index < 0 || index >= navigation.headers.Count)
-            return null;
-
-        return (navigation.headers[index].headerButton as ModListButton)?.modGuid;
+        var navigation = prefab.ModListPanel.GetRequiredComponent<HGHeaderNavigationController>();
+        return (navigation.SelectedButton() as ModListButton)?.modGuid;
     }
 }
