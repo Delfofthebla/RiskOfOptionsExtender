@@ -24,6 +24,8 @@ internal sealed class CategoryPicker : MonoBehaviour
     private const float ArrowAreaWidth = ArrowCenterFromEdge + ArrowSize + ArrowSpacing + ArrowSize / 2 + Margin;
     private const float TabHeightShareOfViewport = 0.6f;
 
+    private static readonly HashSet<CategoryPicker> _livePickers = [];
+
     private RectTransform _scrollView;
     private RectTransform _viewport;
     private RectTransform _leftArrow;
@@ -59,6 +61,12 @@ internal sealed class CategoryPicker : MonoBehaviour
         picker._popup.MarkCurrent(categoryIndex);
     }
 
+    public static void RemoveAll()
+    {
+        foreach (var picker in _livePickers.ToList())
+            picker.Remove();
+    }
+
     private static CategoryPicker GetOrCreate(ModOptionsPanelPrefab panel)
     {
         var picker = panel.CategoryHeader.GetComponent<CategoryPicker>();
@@ -67,6 +75,7 @@ internal sealed class CategoryPicker : MonoBehaviour
 
         picker = panel.CategoryHeader.AddComponent<CategoryPicker>();
         picker.Initialize(panel);
+        _livePickers.Add(picker);
         return picker;
     }
 
@@ -132,10 +141,27 @@ internal sealed class CategoryPicker : MonoBehaviour
     private void Hide()
     {
         _collection = null;
+        _layoutPending = false;
         _popup.Close();
         _button.gameObject.SetActive(false);
         _viewportLayout.ApplyTo(_viewport);
         _leftArrowLayout.ApplyTo(_leftArrow);
+
+        foreach (var tab in _tabs.categoryButtons)
+            SetPreferredWidth(tab, MaxTabWidth);
+    }
+
+    private void Remove()
+    {
+        Hide();
+        Destroy(_popup.gameObject);
+        Destroy(_button.gameObject);
+        Destroy(this);
+    }
+
+    private void OnDestroy()
+    {
+        _livePickers.Remove(this);
     }
 
     private void LateUpdate()
@@ -182,6 +208,9 @@ internal sealed class CategoryPicker : MonoBehaviour
 
     private static void SetPreferredWidth(GameObject tab, float width)
     {
+        if (!tab)
+            return;
+
         var layoutElement = tab.GetComponent<LayoutElement>();
         if (layoutElement)
             layoutElement.preferredWidth = width;

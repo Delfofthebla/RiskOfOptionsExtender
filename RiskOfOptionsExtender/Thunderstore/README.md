@@ -35,8 +35,12 @@ When a mod has more tabs than fit on one page, an "All Tabs" button appears at t
 |-|-|-|
 | Sort Order | Alphabetical | Order of the mod list. |
 | Hide Empty Mods | On | Hide mods with no settings to show. |
+| Mod List Tweaks | On | The search box, A-Z / Z-A sorting and pin stars. When off, this mod leaves the mod list alone. Takes effect immediately. |
+| Option Page Tweaks | On | Restart markers, full setting names, aligned checkboxes and the All Tabs picker. When off, this mod leaves option pages alone. Takes effect immediately. |
 | Never Fill In Missing Options | Off | Don't add missing settings for any mod. Takes effect after a restart. |
 | Skip *mod name* | Off | Don't add missing settings for that mod. Listed in game only for mods that have settings missing from the menu. Saved to the config file only once ticked, as a GUID in `Skipped Mods`. Takes effect after a restart. |
+
+Each visual change can be turned off under Visual Tweaks. A switched-off feature doesn't hook into Risk Of Options at all, so if a future Risk Of Options update breaks one of them, turning it off is a complete workaround.
 
 ## Compatibility
 

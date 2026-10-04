@@ -19,12 +19,24 @@ internal sealed class OptionRowFitter : MonoBehaviour
 
     private static readonly Color IconColor = new(1f, 0.5f, 0.5f, 0.85f);
     private static readonly HashSet<string> DecorationNames = ["BaseOutline", "HoverOutline", "Mod Settings Indicator"];
+    private static readonly HashSet<OptionRowFitter> _liveFitters = [];
 
     private RectTransform _row;
     private RectTransform _label;
     private TMP_Text _text;
     private Image _checkbox;
     private bool _restartRequired;
+    private bool _fitted;
+    private OriginalRowState _original;
+    private RectTransform _movedCheckboxContainer;
+    private LayoutElement _addedLayoutElement;
+    private GameObject _restartIcon;
+
+    public static void RevertAll()
+    {
+        foreach (var fitter in new List<OptionRowFitter>(_liveFitters))
+            fitter.Revert();
+    }
 
     public static void AttachToRows(ModOptionPanelController panelController)
     {
@@ -47,6 +59,47 @@ internal sealed class OptionRowFitter : MonoBehaviour
         fitter._label = text.rectTransform;
         fitter._checkbox = row is ModSettingsBool checkboxRow ? checkboxRow.checkBox : null;
         fitter._restartRequired = IsRestartRequired(row);
+        _liveFitters.Add(fitter);
+    }
+
+    private void OnDestroy()
+    {
+        _liveFitters.Remove(this);
+    }
+
+    private void Revert()
+    {
+        if (_fitted)
+            RestoreRow();
+
+        Destroy(this);
+    }
+
+    private void RestoreRow()
+    {
+        _label.offsetMin = _original.LabelOffsetMin;
+        _label.offsetMax = _original.LabelOffsetMax;
+        _text.enableWordWrapping = _original.WordWrapping;
+        _text.overflowMode = _original.OverflowMode;
+        _text.enableAutoSizing = _original.AutoSizing;
+
+        if (_movedCheckboxContainer)
+            _movedCheckboxContainer.anchoredPosition = _original.CheckboxContainerPosition;
+
+        if (_restartIcon)
+            Destroy(_restartIcon);
+
+        if (_addedLayoutElement)
+        {
+            Destroy(_addedLayoutElement);
+        }
+        else if (_row.TryGetComponent<LayoutElement>(out var layoutElement))
+        {
+            layoutElement.minHeight = _original.MinHeight;
+            layoutElement.preferredHeight = _original.PreferredHeight;
+        }
+
+        LayoutRebuilder.MarkLayoutForRebuild((RectTransform)_row.parent);
     }
 
     private void LateUpdate()
@@ -55,6 +108,8 @@ internal sealed class OptionRowFitter : MonoBehaviour
             return;
 
         enabled = false;
+        _original = OriginalRowState.Capture(_row, _label, _text);
+        _fitted = true;
 
         if (_checkbox)
             AlignCheckboxWithOtherControls();
@@ -78,8 +133,12 @@ internal sealed class OptionRowFitter : MonoBehaviour
         var shift = _row.rect.xMax - CheckboxRightInset - checkboxRight;
 
         var container = ChildOfRowContaining(_checkbox.transform);
-        if (container)
-            container.anchoredPosition += new Vector2(shift, 0);
+        if (!container)
+            return;
+
+        _original.CheckboxContainerPosition = container.anchoredPosition;
+        _movedCheckboxContainer = container;
+        container.anchoredPosition += new Vector2(shift, 0);
     }
 
     private RectTransform ChildOfRowContaining(Transform descendant)
@@ -125,6 +184,7 @@ internal sealed class OptionRowFitter : MonoBehaviour
 
         var iconObject = new GameObject("Restart Required Icon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
         iconObject.layer = gameObject.layer;
+        _restartIcon = iconObject;
 
         var rect = (RectTransform)iconObject.transform;
         rect.SetParent(_label, false);
@@ -157,7 +217,10 @@ internal sealed class OptionRowFitter : MonoBehaviour
     {
         var layoutElement = _row.GetComponent<LayoutElement>();
         if (!layoutElement)
+        {
             layoutElement = _row.gameObject.AddComponent<LayoutElement>();
+            _addedLayoutElement = layoutElement;
+        }
 
         var height = _row.rect.height + extraHeight;
         layoutElement.minHeight = Mathf.Max(layoutElement.minHeight, height);

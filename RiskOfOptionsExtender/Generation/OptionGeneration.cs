@@ -45,7 +45,6 @@ internal static class OptionGeneration
             ModMetadata.Apply(plugin);
 
         ModMetadata.Apply(_self);
-        RestartNotes.Apply();
     }
 
     private static bool HasMissingOptions(List<ConfigFile> files, HashSet<ConfigEntryBase> registered)

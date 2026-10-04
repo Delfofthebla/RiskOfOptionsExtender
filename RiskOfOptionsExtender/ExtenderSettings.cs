@@ -16,6 +16,7 @@ namespace RiskOfOptionsExtender;
 internal sealed class ExtenderSettings
 {
     private const string ModListSection = "Mod List";
+    private const string VisualTweaksSection = "Visual Tweaks";
     private const string FillInSection = "Fill In Missing Options";
     private const string SkipToggleSection = "Skip";
 
@@ -31,6 +32,10 @@ internal sealed class ExtenderSettings
 
     public ConfigEntry<bool> HideEmptyMods { get; }
 
+    public ConfigEntry<bool> ModListTweaks { get; }
+
+    public ConfigEntry<bool> OptionPageTweaks { get; }
+
     public ConfigEntry<bool> NeverFillIn { get; }
 
     public ExtenderSettings(ConfigFile config)
@@ -41,6 +46,10 @@ internal sealed class ExtenderSettings
             "Hide mods that have no options to show.");
         _pinnedMods = config.Bind(ModListSection, "Pinned Mods", "",
             "GUIDs of pinned mods, separated by commas. Pin mods with the star on their row in the mod list.");
+        ModListTweaks = config.Bind(VisualTweaksSection, "Mod List Tweaks", true,
+            "Search box, A-Z / Z-A sorting and pinning in the mod list. When off, this mod leaves Risk Of Options' mod list alone.");
+        OptionPageTweaks = config.Bind(VisualTweaksSection, "Option Page Tweaks", true,
+            "Restart markers, full setting names, aligned checkboxes and the All Tabs picker on mod option pages. When off, this mod leaves Risk Of Options' option pages alone.");
         NeverFillIn = config.Bind(FillInSection, "Never Fill In Missing Options", false,
             "Don't add the options mods leave out of this menu, for any mod.");
         _skippedMods = config.Bind(FillInSection, "Skipped Mods", "",
@@ -51,8 +60,10 @@ internal sealed class ExtenderSettings
         _pinnedGuids = ParseGuids(_pinnedMods.Value);
         _skippedGuids = ParseGuids(_skippedMods.Value);
 
-        AddOwnOption(new ChoiceOption(SortOrder));
+        AddOwnOption(new ChoiceOption(SortOrder, new ChoiceConfig { checkIfDisabled = () => !ModListTweaks.Value }));
         AddOwnOption(new CheckBoxOption(HideEmptyMods));
+        AddOwnOption(new CheckBoxOption(ModListTweaks));
+        AddOwnOption(new CheckBoxOption(OptionPageTweaks));
         AddOwnOption(new CheckBoxOption(NeverFillIn, new CheckBoxConfig { restartRequired = true }));
     }
 

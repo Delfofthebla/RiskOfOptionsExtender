@@ -15,10 +15,11 @@ internal sealed class ModListToolbar : MonoBehaviour
     private const float SortButtonWidth = 96f;
 
     private TMP_Text _sortLabel;
+    private RectTransform _scrollView;
 
     private static ExtenderSettings Settings => RiskOfOptionsExtenderPlugin.Settings;
 
-    public static void Create(ModOptionsPanelPrefab panel, ModListOrganizer organizer)
+    public static ModListToolbar Create(ModOptionsPanelPrefab panel, ModListOrganizer organizer)
     {
         var modListPanel = panel.ModListPanel.transform;
         var scrollView = (RectTransform)modListPanel.Find("Scroll View");
@@ -49,7 +50,17 @@ internal sealed class ModListToolbar : MonoBehaviour
         SearchField.Create(rect, styleSource, organizer.SetFilter);
 
         var toolbar = toolbarObject.AddComponent<ModListToolbar>();
+        toolbar._scrollView = scrollView;
         toolbar.CreateSortButton(panel, rect);
+        return toolbar;
+    }
+
+    public void Remove()
+    {
+        if (_scrollView)
+            _scrollView.offsetMax += new Vector2(0, Height + Gap);
+
+        Destroy(gameObject);
     }
 
     private static LayoutElement LayoutElementOf(GameObject gameObject)

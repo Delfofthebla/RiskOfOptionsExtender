@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using RiskOfOptions.Components.Panel;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -14,6 +15,8 @@ internal sealed class PinToggle : MonoBehaviour, IPointerDownHandler, IPointerCl
     private static readonly Color UnpinnedColor = new(1f, 1f, 1f, 0.2f);
     private static readonly Color HoveredColor = new(1f, 1f, 1f, 0.6f);
 
+    private readonly List<Graphic> _graphicsMadeUnclickable = [];
+    private RectTransform _label;
     private Image _image;
     private string _modGuid;
     private ModListOrganizer _organizer;
@@ -21,10 +24,8 @@ internal sealed class PinToggle : MonoBehaviour, IPointerDownHandler, IPointerCl
 
     private static ExtenderSettings Settings => RiskOfOptionsExtenderPlugin.Settings;
 
-    public static void AddTo(ModListButton button, ModListOrganizer organizer)
+    public static PinToggle AddTo(ModListButton button, ModListOrganizer organizer)
     {
-        StopChildrenCatchingClicks(button);
-
         var label = (RectTransform)button.transform.Find("ButtonText");
         label.offsetMax -= new Vector2(Size + RightInset, 0);
 
@@ -45,7 +46,24 @@ internal sealed class PinToggle : MonoBehaviour, IPointerDownHandler, IPointerCl
         toggle._image.preserveAspect = true;
         toggle._modGuid = button.modGuid;
         toggle._organizer = organizer;
+        toggle._label = label;
+        toggle.StopRowChildrenCatchingClicks(button);
         toggle.Refresh();
+        return toggle;
+    }
+
+    public void Remove()
+    {
+        if (_label)
+            _label.offsetMax += new Vector2(Size + RightInset, 0);
+
+        foreach (var graphic in _graphicsMadeUnclickable)
+        {
+            if (graphic)
+                graphic.raycastTarget = true;
+        }
+
+        Destroy(gameObject);
     }
 
     // Unity only completes a click on the object that also received the press; without this the mod row takes the press.
@@ -83,12 +101,15 @@ internal sealed class PinToggle : MonoBehaviour, IPointerDownHandler, IPointerCl
             _image.color = _hovered ? HoveredColor : UnpinnedColor;
     }
 
-    private static void StopChildrenCatchingClicks(ModListButton button)
+    private void StopRowChildrenCatchingClicks(ModListButton button)
     {
         foreach (var graphic in button.GetComponentsInChildren<Graphic>(true))
         {
-            if (graphic.gameObject != button.gameObject)
-                graphic.raycastTarget = false;
+            if (graphic.gameObject == button.gameObject || graphic.gameObject == gameObject || !graphic.raycastTarget)
+                continue;
+
+            graphic.raycastTarget = false;
+            _graphicsMadeUnclickable.Add(graphic);
         }
     }
 }
