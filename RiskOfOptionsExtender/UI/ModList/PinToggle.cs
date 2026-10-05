@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using RiskOfOptions.Components.Panel;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,7 +13,7 @@ internal sealed class PinToggle : PointerTarget
     private static readonly Color UnpinnedColor = new(1f, 1f, 1f, 0.2f);
     private static readonly Color HoveredColor = new(1f, 1f, 1f, 0.6f);
 
-    private readonly List<Graphic> _graphicsMadeUnclickable = [];
+    private SuppressedRaycasts _rowRaycasts;
     private RectTransform _label;
     private Image _image;
     private string _modGuid;
@@ -40,7 +39,7 @@ internal sealed class PinToggle : PointerTarget
         toggle._modGuid = button.modGuid;
         toggle._organizer = organizer;
         toggle._label = label;
-        toggle.StopRowChildrenCatchingClicks(button);
+        toggle._rowRaycasts = SuppressedRaycasts.Under(button.gameObject, button.gameObject, pinObject);
         toggle.Refresh();
 
         label.offsetMax -= new Vector2(Size + RightInset, 0);
@@ -52,12 +51,7 @@ internal sealed class PinToggle : PointerTarget
         if (_label)
             _label.offsetMax += new Vector2(Size + RightInset, 0);
 
-        foreach (var graphic in _graphicsMadeUnclickable)
-        {
-            if (graphic)
-                graphic.raycastTarget = true;
-        }
-
+        _rowRaycasts?.Restore();
         Destroy(gameObject);
     }
 
@@ -73,17 +67,5 @@ internal sealed class PinToggle : PointerTarget
             _image.color = PinnedColor;
         else
             _image.color = IsHovered ? HoveredColor : UnpinnedColor;
-    }
-
-    private void StopRowChildrenCatchingClicks(ModListButton button)
-    {
-        foreach (var graphic in button.GetComponentsInChildren<Graphic>(true))
-        {
-            if (graphic.gameObject == button.gameObject || graphic.gameObject == gameObject || !graphic.raycastTarget)
-                continue;
-
-            graphic.raycastTarget = false;
-            _graphicsMadeUnclickable.Add(graphic);
-        }
     }
 }

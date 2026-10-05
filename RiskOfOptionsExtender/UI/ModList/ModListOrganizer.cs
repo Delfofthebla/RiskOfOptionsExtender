@@ -27,6 +27,7 @@ internal sealed class ModListOrganizer : MonoBehaviour
     private ExtenderSettings _settings;
     private ModListGuards _guards;
     private ModListToolbar _toolbar;
+    private SuppressedRaycasts _highlightRaycasts;
     private bool _tweaksShown;
     private string _filter = "";
 
@@ -144,6 +145,7 @@ internal sealed class ModListOrganizer : MonoBehaviour
         if (_pins.Count > 0)
             return;
 
+        _highlightRaycasts = SuppressSelectionHighlightRaycasts();
         foreach (var entry in _entries)
             _pins.Add(PinToggle.AddTo(entry.Button, this));
     }
@@ -166,6 +168,16 @@ internal sealed class ModListOrganizer : MonoBehaviour
         }
 
         _pins.Clear();
+        _highlightRaycasts?.Restore();
+        _highlightRaycasts = null;
+    }
+
+    // The navigation controller moves its highlight onto the selected mod's button as the last child, covering the
+    // whole row, so it would take every click meant for that row's pin star.
+    private SuppressedRaycasts SuppressSelectionHighlightRaycasts()
+    {
+        var highlight = _navigation.headerHighlightObject;
+        return highlight ? SuppressedRaycasts.Under(highlight) : null;
     }
 
     private void ReleaseList()

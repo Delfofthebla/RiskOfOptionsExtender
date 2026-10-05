@@ -3,10 +3,11 @@
 An add-on for [Risk Of Options](https://thunderstore.io/package/Rune580/Risk_Of_Options/) that puts every mod's settings
 in its in-game menu, and makes the mod list easier to get around.
 
-I play with a pretty extensive modlist, and a lot of those mods either don't show up in Risk Of Options at all or only list
-some of their settings. I got tired of searching through r2modman's config list and editing settings manually. With as many
-mods as I have, finding the one I wanted in the list was super annoying. Especially for things like OST Mods that have a
-volume slider that you need to use instead of the default game's music slider. So I made this to help with all of that.
+I play with a pretty extensive modlist, and a lot of those mods either don't show up in Risk Of Options at all or only
+list some of their settings. I got tired of searching through r2modman's config list and editing settings manually.
+With as many mods as I have, finding the one I wanted in the list was super annoying. Especially for things like OST
+Mods that have a volume slider that you need to use instead of the default game's music slider. So I made this to help
+with all of that.
 
 ![The Mod Options menu with pinned mods, the All Tabs bar and a filled-in mod page](https://raw.githubusercontent.com/Delfofthebla/RiskOfOptionsExtender/master/docs/screenshots/FeatureOverview.png)
 
