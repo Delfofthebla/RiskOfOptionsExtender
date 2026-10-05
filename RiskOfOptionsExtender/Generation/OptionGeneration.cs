@@ -46,6 +46,7 @@ internal static class OptionGeneration
         var registered = RegisteredEntries.Collect();
         var plugins = Chainloader.PluginInfos.Values
             .Where(plugin => plugin.Metadata.GUID != _self.Metadata.GUID && filesByGuid.ContainsKey(plugin.Metadata.GUID))
+            .Where(plugin => !OptionGeneratorCoexistence.Handles(plugin))
             .ToList();
 
         var pluginsWithFillableEntries = plugins

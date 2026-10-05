@@ -19,10 +19,9 @@ internal sealed class CategoryPicker : MonoBehaviour
     private const float MaxTabWidth = 200f;
     private const float Margin = 12f;
     private const float ArrowSize = 64f;
-    private const float ArrowSpacing = 8f;
     private const float RightArrowCenterFromEdge = 60f;
-    private const float LeftArrowCenterFromEdge = RightArrowCenterFromEdge + ArrowSize + ArrowSpacing;
-    private const float ArrowAreaWidth = LeftArrowCenterFromEdge + ArrowSize / 2 + Margin;
+    private const float RightArrowAreaWidth = RightArrowCenterFromEdge + ArrowSize / 2 + Margin;
+    private const float LeftOfTabsFixedWidth = Margin + Margin + ArrowSize + Margin;
     private const float TabHeightShareOfViewport = 0.6f;
 
     private static readonly HashSet<CategoryPicker> _livePickers = [];
@@ -116,11 +115,6 @@ internal sealed class CategoryPicker : MonoBehaviour
 
         _buttonLabel.text = $"All Tabs ({collection.CategoryCount})";
         _button.gameObject.SetActive(true);
-
-        _leftArrow.anchorMin = new Vector2(1, 0.5f);
-        _leftArrow.anchorMax = new Vector2(1, 0.5f);
-        _leftArrow.anchoredPosition = new Vector2(-LeftArrowCenterFromEdge, 0);
-
         _layoutPending = !TryFitPageOfTabs();
     }
 
@@ -177,9 +171,12 @@ internal sealed class CategoryPicker : MonoBehaviour
         var stripLayout = tabStrip.GetComponent<HorizontalLayoutGroup>();
         var gaps = stripLayout ? (TabsPerPage - 1) * stripLayout.spacing + stripLayout.padding.horizontal : 0f;
 
-        var widthForTabs = scrollViewWidth - 2 * Margin - ArrowAreaWidth - gaps;
+        var widthForTabs = scrollViewWidth - LeftOfTabsFixedWidth - RightArrowAreaWidth - gaps;
         var tabWidth = Mathf.Min(MaxTabWidth, widthForTabs / (TabsPerPage + PickerButtonSlots));
-        var viewportLeft = 2 * Margin + tabWidth;
+        var leftArrowLeft = Margin + tabWidth + Margin;
+        var viewportLeft = leftArrowLeft + ArrowSize + Margin;
+
+        PlaceLeftArrowAt(leftArrowLeft);
 
         _viewport.anchorMin = new Vector2(0, _viewport.anchorMin.y);
         _viewport.anchorMax = new Vector2(0, _viewport.anchorMax.y);
@@ -194,6 +191,13 @@ internal sealed class CategoryPicker : MonoBehaviour
 
         _button.sizeDelta = new Vector2(tabWidth, TabHeight());
         return true;
+    }
+
+    private void PlaceLeftArrowAt(float left)
+    {
+        _leftArrow.anchorMin = new Vector2(0, _leftArrow.anchorMin.y);
+        _leftArrow.anchorMax = new Vector2(0, _leftArrow.anchorMax.y);
+        _leftArrow.anchoredPosition = new Vector2(left + _leftArrow.pivot.x * ArrowSize, _leftArrow.anchoredPosition.y);
     }
 
     private float TabHeight()

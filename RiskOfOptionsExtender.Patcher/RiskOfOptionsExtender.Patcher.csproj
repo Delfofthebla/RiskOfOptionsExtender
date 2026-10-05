@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <AssemblyName>RiskOfOptionsExtender.Patcher</AssemblyName>
+        <RootNamespace>RiskOfOptionsExtender.Patcher</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BepInEx.Core" Version="5.4.21"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\RiskOfOptionsExtender\Discovery\ConfigFileWatch.cs" Link="Discovery\ConfigFileWatch.cs"/>
+    </ItemGroup>
+</Project>

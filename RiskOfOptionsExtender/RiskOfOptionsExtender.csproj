@@ -4,7 +4,7 @@
         <RootNamespace>RiskOfOptionsExtender</RootNamespace>
         <ThunderstorePackageName>Risk_Of_Options_Extender</ThunderstorePackageName>
         <Author>Delfofthebla</Author>
-        <Version>0.1.0</Version>
+        <Version>1.0.0</Version>
         <PluginVersionSource>RiskOfOptionsExtenderPlugin.cs</PluginVersionSource>
     </PropertyGroup>
 
@@ -13,6 +13,10 @@
         <PackageReference Include="BepInEx.Core" Version="5.4.21"/>
         <PackageReference Include="RiskOfRain2.GameLibs" Version="1.4.1-r.0"/>
         <PackageReference Include="UnityEngine.Modules" Version="2021.3.33" IncludeAssets="compile"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\RiskOfOptionsExtender.Patcher\RiskOfOptionsExtender.Patcher.csproj" ReferenceOutputAssembly="false" OutputItemType="ThunderstorePatcher"/>
     </ItemGroup>
 
     <ItemGroup>

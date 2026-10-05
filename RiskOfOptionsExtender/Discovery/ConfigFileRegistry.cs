@@ -1,71 +1,53 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
-using BepInEx;
 using BepInEx.Configuration;
-using MonoMod.RuntimeDetour;
-using RiskOfOptionsExtender.Resilience;
 
 namespace RiskOfOptionsExtender.Discovery;
 
 internal static class ConfigFileRegistry
 {
-    private static readonly List<ConfigFileOrigin> _origins = [];
-    private static readonly object _lock = new();
-    private static Hook _constructorHook;
+    private const string PatcherAssemblyName = "RiskOfOptionsExtender.Patcher";
+    private const string PatcherTypeName = "RiskOfOptionsExtender.Patcher.RiskOfOptionsExtenderPatcher";
 
-    public static IReadOnlyList<ConfigFileOrigin> Origins
+    private static Func<IReadOnlyList<(ConfigFile File, string OwnerGuid, Assembly CreatingAssembly)>> _readOrigins = () => [];
+
+    public static IEnumerable<ConfigFileOrigin> Origins
     {
         get
         {
-            lock (_lock)
-                return _origins.ToArray();
+            return _readOrigins().Select(origin => new ConfigFileOrigin(origin.File, origin.OwnerGuid, origin.CreatingAssembly));
         }
     }
 
     public static void Install()
     {
-        var constructor = typeof(ConfigFile).GetConstructor([typeof(string), typeof(bool), typeof(BepInPlugin)])
-            ?? throw new IncompatibilityException("BepInEx's ConfigFile(string, bool, BepInPlugin) constructor no longer exists.");
+        if (TryUsePatcher())
+            return;
 
-        _constructorHook = new Hook(constructor, RecordOrigin);
+        RiskOfOptionsExtenderPlugin.Log.LogWarning(
+            "The RiskOfOptionsExtender patcher isn't running, so config files that earlier-loading mods keep outside their plugin class " +
+            "won't get menu options. Reinstalling the mod restores the patcher.");
+
+        ConfigFileWatch.Install();
+        _readOrigins = () => ConfigFileWatch.Origins;
     }
 
-    private static void RecordOrigin(Action<ConfigFile, string, bool, BepInPlugin> orig, ConfigFile self, string configPath, bool saveOnInit, BepInPlugin ownerMetadata)
+    private static bool TryUsePatcher()
     {
-        orig(self, configPath, saveOnInit, ownerMetadata);
+        var patcher = AppDomain.CurrentDomain.GetAssemblies()
+            .FirstOrDefault(assembly => assembly.GetName().Name == PatcherAssemblyName)
+            ?.GetType(PatcherTypeName);
 
-        try
-        {
-            var origin = new ConfigFileOrigin(self, ownerMetadata?.GUID, FindCreatingAssembly());
-            lock (_lock)
-                _origins.Add(origin);
-        }
-        catch (Exception exception)
-        {
-            RiskOfOptionsExtenderPlugin.Log.LogDebug($"Could not record who created {configPath}: {exception}");
-        }
-    }
+        if (patcher?.GetProperty("IsWatching")?.GetValue(null) is not true)
+            return false;
 
-    private static Assembly FindCreatingAssembly()
-    {
-        foreach (var frame in new StackTrace(2, false).GetFrames() ?? [])
-        {
-            var assembly = frame.GetMethod()?.DeclaringType?.Assembly;
-            if (assembly != null && !IsInfrastructure(assembly))
-                return assembly;
-        }
+        var originsProperty = patcher.GetProperty("ConfigFileOrigins");
+        if (originsProperty?.PropertyType != typeof(IReadOnlyList<(ConfigFile, string, Assembly)>))
+            return false;
 
-        return null;
-    }
-
-    private static bool IsInfrastructure(Assembly assembly)
-    {
-        if (assembly == typeof(ConfigFile).Assembly || assembly == typeof(object).Assembly || assembly == typeof(ConfigFileRegistry).Assembly)
-            return true;
-
-        var name = assembly.GetName().Name;
-        return name.StartsWith("MonoMod", StringComparison.Ordinal) || name.StartsWith("0Harmony", StringComparison.Ordinal);
+        _readOrigins = () => (IReadOnlyList<(ConfigFile, string, Assembly)>)originsProperty.GetValue(null);
+        return true;
     }
 }
