@@ -8,19 +8,20 @@ using RiskOfOptionsExtender.UI.Features;
 
 namespace RiskOfOptionsExtender;
 
-[BepInPlugin(Guid, Name, Version)]
+[BepInPlugin(GUID, NAME, VERSION)]
 [BepInDependency(RiskOfOptions.PluginInfo.PLUGIN_GUID)]
 public class RiskOfOptionsExtenderPlugin : BaseUnityPlugin
 {
-    public const string Guid = "com.Delfofthebla.RiskOfOptionsExtender";
-    public const string Name = "RiskOfOptionsExtender";
-    public const string Version = "1.0.0";
+    public const string GUID = "com.Delfofthebla.RiskOfOptionsExtender";
+    public const string NAME = "RiskOfOptionsExtender";
+    public const string VERSION = "1.0.0";
 
     internal static ManualLogSource Log { get; private set; }
 
     private void Awake()
     {
         Log = Logger;
+
         new FeatureGuard("config file discovery").Run("start watching for config files", ConfigFileRegistry.Install);
 
         var settings = new ExtenderSettings(Config);

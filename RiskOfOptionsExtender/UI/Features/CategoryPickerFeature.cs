@@ -10,10 +10,7 @@ internal sealed class CategoryPickerFeature(ExtenderSettings settings) : PanelFe
 {
     protected override bool IsEnabled => settings.OptionPageTweaks.Value;
 
-    protected override Hook CreateHook()
-    {
-        return new Hook(PanelMethods.LoadModOptions, ShowPickerAfterModLoaded);
-    }
+    protected override Hook CreateHook() => new(PanelMethods.LoadModOptions, ShowPickerAfterModLoaded);
 
     protected override void ApplyToOpenPanels()
     {
@@ -25,10 +22,7 @@ internal sealed class CategoryPickerFeature(ExtenderSettings settings) : PanelFe
         }
     }
 
-    protected override void RemoveFromOpenPanels()
-    {
-        CategoryPicker.RemoveAll();
-    }
+    protected override void RemoveFromOpenPanels() => CategoryPicker.RemoveAll();
 
     private void ShowPickerAfterModLoaded(Action<ModOptionPanelController, string> orig, ModOptionPanelController self, string modGuid)
     {

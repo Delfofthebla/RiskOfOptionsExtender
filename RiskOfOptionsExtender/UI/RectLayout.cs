@@ -2,34 +2,16 @@ using UnityEngine;
 
 namespace RiskOfOptionsExtender.UI;
 
-internal readonly struct RectLayout
+internal readonly record struct RectLayout(Vector2 AnchorMin, Vector2 AnchorMax, Vector2 Pivot, Vector2 OffsetMin, Vector2 OffsetMax)
 {
-    private readonly Vector2 _anchorMin;
-    private readonly Vector2 _anchorMax;
-    private readonly Vector2 _pivot;
-    private readonly Vector2 _offsetMin;
-    private readonly Vector2 _offsetMax;
-
-    private RectLayout(RectTransform rect)
-    {
-        _anchorMin = rect.anchorMin;
-        _anchorMax = rect.anchorMax;
-        _pivot = rect.pivot;
-        _offsetMin = rect.offsetMin;
-        _offsetMax = rect.offsetMax;
-    }
-
-    public static RectLayout Of(RectTransform rect)
-    {
-        return new RectLayout(rect);
-    }
+    public static RectLayout Of(RectTransform rect) => new(rect.anchorMin, rect.anchorMax, rect.pivot, rect.offsetMin, rect.offsetMax);
 
     public void ApplyTo(RectTransform rect)
     {
-        rect.anchorMin = _anchorMin;
-        rect.anchorMax = _anchorMax;
-        rect.pivot = _pivot;
-        rect.offsetMin = _offsetMin;
-        rect.offsetMax = _offsetMax;
+        rect.anchorMin = AnchorMin;
+        rect.anchorMax = AnchorMax;
+        rect.pivot = Pivot;
+        rect.offsetMin = OffsetMin;
+        rect.offsetMax = OffsetMax;
     }
 }

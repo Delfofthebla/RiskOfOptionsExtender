@@ -8,7 +8,9 @@ internal static class ComponentExtensions
     public static T GetOrAddComponent<T>(this GameObject gameObject) where T : Component
     {
         var component = gameObject.GetComponent<T>();
-        return component ? component : gameObject.AddComponent<T>();
+        return component
+            ? component
+            : gameObject.AddComponent<T>();
     }
 
     public static T GetRequiredComponent<T>(this GameObject gameObject) where T : Component
@@ -20,10 +22,7 @@ internal static class ComponentExtensions
         return component;
     }
 
-    public static T GetRequiredComponent<T>(this Component owner) where T : Component
-    {
-        return owner.gameObject.GetRequiredComponent<T>();
-    }
+    public static T GetRequiredComponent<T>(this Component owner) where T : Component => owner.gameObject.GetRequiredComponent<T>();
 
     public static T GetRequiredComponentInChildren<T>(this GameObject gameObject) where T : Component
     {

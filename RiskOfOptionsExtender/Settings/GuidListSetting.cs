@@ -19,10 +19,7 @@ internal sealed class GuidListSetting
 
     public event Action Changed;
 
-    public bool Contains(string guid)
-    {
-        return _guids.Contains(guid);
-    }
+    public bool Contains(string guid) => _guids.Contains(guid);
 
     public void Set(string guid, bool included)
     {
@@ -34,15 +31,9 @@ internal sealed class GuidListSetting
         Save();
     }
 
-    public void Toggle(string guid)
-    {
-        Set(guid, !Contains(guid));
-    }
+    public void Toggle(string guid) => Set(guid, !Contains(guid));
 
-    private void Save()
-    {
-        _entry.Value = string.Join(",", _guids.OrderBy(guid => guid, StringComparer.Ordinal));
-    }
+    private void Save() => _entry.Value = string.Join(",", _guids.OrderBy(guid => guid, StringComparer.Ordinal));
 
     private void OnEntryChanged(object sender, EventArgs args)
     {
@@ -50,8 +41,5 @@ internal sealed class GuidListSetting
         Changed?.Invoke();
     }
 
-    private static HashSet<string> Parse(string commaSeparated)
-    {
-        return [.. commaSeparated.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(guid => guid.Trim())];
-    }
+    private static HashSet<string> Parse(string commaSeparated) => [.. commaSeparated.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(guid => guid.Trim())];
 }

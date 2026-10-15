@@ -8,8 +8,8 @@ namespace RiskOfOptionsExtender.UI.OptionRows;
 
 internal static class RestartNotes
 {
-    private const string RiskOfOptionsTokenPrefix = "RISK_OF_OPTIONS";
-    private const string Note = "<color=#FF8080>Requires a restart to take effect.</color>";
+    private static readonly string RiskOfOptionsTokenPrefix = "RISK_OF_OPTIONS";
+    private static readonly string Note = "<color=#FF8080>Requires a restart to take effect.</color>";
 
     private static readonly Dictionary<string, string> _originalDescriptions = [];
 
@@ -28,7 +28,7 @@ internal static class RestartNotes
 
                 var description = option.Description ?? "";
                 _originalDescriptions[token] = description;
-                LanguageApi.Add(token, description.Length == 0 ? Note : $"{description}\n\n{Note}");
+                LanguageApi.Add(token, WithRestartNote(description));
             }
         }
     }
@@ -39,5 +39,14 @@ internal static class RestartNotes
             LanguageApi.Add(noted.Key, noted.Value);
 
         _originalDescriptions.Clear();
+    }
+
+    private static string WithRestartNote(string description)
+    {
+        if (description.Length == 0)
+            return Note;
+
+        return $"{description}"
+            + $"\n\n{Note}";
     }
 }

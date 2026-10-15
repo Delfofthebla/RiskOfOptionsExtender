@@ -14,15 +14,15 @@ namespace RiskOfOptionsExtender.UI.CategoryPicking;
 
 internal sealed class CategoryPicker : MonoBehaviour
 {
-    private const int TabsPerPage = 4;
-    private const int PickerButtonSlots = 1;
-    private const float MaxTabWidth = 200f;
-    private const float Margin = 12f;
-    private const float ArrowSize = 64f;
-    private const float RightArrowCenterFromEdge = 60f;
-    private const float RightArrowAreaWidth = RightArrowCenterFromEdge + ArrowSize / 2 + Margin;
-    private const float LeftOfTabsFixedWidth = Margin + Margin + ArrowSize + Margin;
-    private const float TabHeightShareOfViewport = 0.6f;
+    private static readonly int TabsPerPage = 4;
+    private static readonly int PickerButtonSlots = 1;
+    private static readonly float MaxTabWidth = 200f;
+    private static readonly float Margin = 12f;
+    private static readonly float ArrowSize = 64f;
+    private static readonly float RightArrowCenterFromEdge = 60f;
+    private static readonly float RightArrowAreaWidth = RightArrowCenterFromEdge + ArrowSize / 2 + Margin;
+    private static readonly float LeftOfTabsFixedWidth = Margin + Margin + ArrowSize + Margin;
+    private static readonly float TabHeightShareOfViewport = 0.6f;
 
     private static readonly HashSet<CategoryPicker> _livePickers = [];
 
@@ -148,10 +148,7 @@ internal sealed class CategoryPicker : MonoBehaviour
         Destroy(this);
     }
 
-    private void OnDestroy()
-    {
-        _livePickers.Remove(this);
-    }
+    private void OnDestroy() => _livePickers.Remove(this);
 
     private void LateUpdate()
     {
@@ -169,7 +166,9 @@ internal sealed class CategoryPicker : MonoBehaviour
 
         var tabStrip = (RectTransform)_tabs.categoryTransform;
         var stripLayout = tabStrip.GetComponent<HorizontalLayoutGroup>();
-        var gaps = stripLayout ? (TabsPerPage - 1) * stripLayout.spacing + stripLayout.padding.horizontal : 0f;
+        var gaps = stripLayout
+            ? (TabsPerPage - 1) * stripLayout.spacing + stripLayout.padding.horizontal
+            : 0f;
 
         var widthForTabs = scrollViewWidth - LeftOfTabsFixedWidth - RightArrowAreaWidth - gaps;
         var tabWidth = Mathf.Min(MaxTabWidth, widthForTabs / (TabsPerPage + PickerButtonSlots));
@@ -203,7 +202,9 @@ internal sealed class CategoryPicker : MonoBehaviour
     private float TabHeight()
     {
         var measured = ((RectTransform)_tabs.categoryButtons[0].transform).rect.height;
-        return measured >= 1 ? measured : _viewport.rect.height * TabHeightShareOfViewport;
+        return measured >= 1
+            ? measured
+            : _viewport.rect.height * TabHeightShareOfViewport;
     }
 
     private static void SetPreferredWidth(GameObject tab, float width)

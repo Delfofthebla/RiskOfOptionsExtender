@@ -21,8 +21,5 @@ internal static class OptionIdentifiers
 
     // Mirrors ModSettingsManager.AddOption. Risk Of Options adds an option to its category before rejecting a duplicate
     // identifier, which leaves a broken row behind, so duplicates have to be caught before adding.
-    private static string Predict(string modGuid, string category, string name, string optionTypeName)
-    {
-        return $"{modGuid}.{category}.{name}.{optionTypeName}".Replace(" ", "_").ToUpper();
-    }
+    private static string Predict(string modGuid, string category, string name, string optionTypeName) => $"{modGuid}.{category}.{name}.{optionTypeName}".Replace(" ", "_").ToUpper();
 }

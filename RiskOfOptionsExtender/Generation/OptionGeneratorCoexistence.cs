@@ -10,9 +10,8 @@ namespace RiskOfOptionsExtender.Generation;
 // overlapping work would add settings twice; those plugins are left to it instead.
 internal static class OptionGeneratorCoexistence
 {
-    public const string Guid = "local.option.generator";
-
-    private const string EnabledSection = "Enabled";
+    private static readonly string Guid = "local.option.generator";
+    private static readonly string EnabledSection = "Enabled";
 
     private static bool _announced;
 
@@ -25,20 +24,12 @@ internal static class OptionGeneratorCoexistence
         return IsSwitchedOff(optionGenerator, plugin) || plugin.Metadata.GUID == Guid || !DependsOnRiskOfOptions(plugin);
     }
 
-    private static bool TryGetOptionGenerator(out PluginInfo optionGenerator)
-    {
-        return Chainloader.PluginInfos.TryGetValue(Guid, out optionGenerator) && optionGenerator.Instance;
-    }
+    private static bool TryGetOptionGenerator(out PluginInfo optionGenerator) => Chainloader.PluginInfos.TryGetValue(Guid, out optionGenerator) && optionGenerator.Instance;
 
     private static bool IsSwitchedOff(PluginInfo optionGenerator, PluginInfo plugin)
-    {
-        return optionGenerator.Instance.Config.TryGetEntry<bool>(EnabledSection, plugin.Metadata.GUID, out var enabled) && !enabled.Value;
-    }
+        => optionGenerator.Instance.Config.TryGetEntry<bool>(EnabledSection, plugin.Metadata.GUID, out var enabled) && !enabled.Value;
 
-    private static bool DependsOnRiskOfOptions(PluginInfo plugin)
-    {
-        return plugin.Dependencies.Any(dependency => dependency.DependencyGUID == RiskOfOptions.PluginInfo.PLUGIN_GUID);
-    }
+    private static bool DependsOnRiskOfOptions(PluginInfo plugin) => plugin.Dependencies.Any(dependency => dependency.DependencyGUID == RiskOfOptions.PluginInfo.PLUGIN_GUID);
 
     private static void AnnounceOnce()
     {
@@ -46,7 +37,6 @@ internal static class OptionGeneratorCoexistence
             return;
 
         _announced = true;
-        RiskOfOptionsExtenderPlugin.Log.LogInfo(
-            "OptionGenerator is installed: it fills in mods that don't use Risk Of Options, and this mod fills in the rest.");
+        RiskOfOptionsExtenderPlugin.Log.LogInfo("OptionGenerator is installed: it fills in mods that don't use Risk Of Options, and this mod fills in the rest.");
     }
 }

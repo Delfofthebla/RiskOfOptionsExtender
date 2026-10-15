@@ -20,8 +20,5 @@ internal static class UnsavedConfigFiles
         return file;
     }
 
-    public static bool Contains(ConfigFile file)
-    {
-        return file != null && _files.Contains(file);
-    }
+    public static bool Contains(ConfigFile file) => file != null && _files.Contains(file);
 }

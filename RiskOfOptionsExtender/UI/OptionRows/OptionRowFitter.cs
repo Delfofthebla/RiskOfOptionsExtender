@@ -10,8 +10,8 @@ namespace RiskOfOptionsExtender.UI.OptionRows;
 
 internal sealed class OptionRowFitter : MonoBehaviour
 {
-    private const float GapBeforeControl = 12f;
-    private const float CheckboxRightInset = 12f;
+    private static readonly float GapBeforeControl = 12f;
+    private static readonly float CheckboxRightInset = 12f;
     private static readonly HashSet<string> DecorationNames = ["BaseOutline", "HoverOutline", "Mod Settings Indicator"];
     private static readonly HashSet<OptionRowFitter> _liveFitters = [];
 
@@ -51,15 +51,14 @@ internal sealed class OptionRowFitter : MonoBehaviour
         fitter._row = (RectTransform)row.transform;
         fitter._text = text;
         fitter._label = text.rectTransform;
-        fitter._checkbox = row is ModSettingsBool checkboxRow ? checkboxRow.checkBox : null;
+        fitter._checkbox = row is ModSettingsBool checkboxRow
+            ? checkboxRow.checkBox
+            : null;
         fitter._guard = guard;
         _liveFitters.Add(fitter);
     }
 
-    private void OnDestroy()
-    {
-        _liveFitters.Remove(this);
-    }
+    private void OnDestroy() => _liveFitters.Remove(this);
 
     private void Revert()
     {

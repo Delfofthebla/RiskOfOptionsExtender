@@ -3,11 +3,4 @@ using BepInEx.Configuration;
 
 namespace RiskOfOptionsExtender.Discovery;
 
-internal readonly struct ConfigFileOrigin(ConfigFile file, string ownerGuid, Assembly creatingAssembly)
-{
-    public ConfigFile File { get; } = file;
-
-    public string OwnerGuid { get; } = ownerGuid;
-
-    public Assembly CreatingAssembly { get; } = creatingAssembly;
-}
+internal sealed record ConfigFileOrigin(ConfigFile File, string OwnerGuid, Assembly CreatingAssembly);

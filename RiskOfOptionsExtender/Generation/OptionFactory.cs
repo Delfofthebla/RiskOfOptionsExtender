@@ -22,10 +22,7 @@ internal static class OptionFactory
         [typeof(Color)] = (entry, details) => new ColorOption((ConfigEntry<Color>)entry, details.ApplyTo(new ColorOptionConfig()))
     };
 
-    public static bool CanCreate(ConfigEntryBase entry)
-    {
-        return HasNativeControl(entry.SettingType) || ProxyEntries.CanProxy(entry);
-    }
+    public static bool CanCreate(ConfigEntryBase entry) => HasNativeControl(entry.SettingType) || ProxyEntries.CanProxy(entry);
 
     public static BaseOption Create(ConfigEntryBase entry, OptionDetails details)
     {
@@ -33,20 +30,16 @@ internal static class OptionFactory
             return CreateNative(entry, details);
 
         var proxy = ProxyEntries.GetOrCreate(entry);
-        return proxy == null ? null : CreateNative(proxy, details);
+        return proxy == null
+            ? null
+            : CreateNative(proxy, details);
     }
 
-    private static bool HasNativeControl(Type type)
-    {
-        return NativeControls.ContainsKey(type) || IsDropdownCompatibleEnum(type);
-    }
+    private static bool HasNativeControl(Type type) => NativeControls.ContainsKey(type) || IsDropdownCompatibleEnum(type);
 
-    private static BaseOption CreateNative(ConfigEntryBase entry, OptionDetails details)
-    {
-        return NativeControls.TryGetValue(entry.SettingType, out var create)
-            ? create(entry, details)
-            : new ChoiceOption(entry, details.ApplyTo(new ChoiceConfig()));
-    }
+    private static BaseOption CreateNative(ConfigEntryBase entry, OptionDetails details) => NativeControls.TryGetValue(entry.SettingType, out var create)
+        ? create(entry, details)
+        : new ChoiceOption(entry, details.ApplyTo(new ChoiceConfig()));
 
     private static BaseOption CreateFloat(ConfigEntry<float> entry, OptionDetails details)
     {
@@ -64,15 +57,12 @@ internal static class OptionFactory
         return new IntFieldOption(entry, details.ApplyTo(new IntFieldConfig()));
     }
 
-    private static InputFieldConfig TextFieldConfig()
+    private static InputFieldConfig TextFieldConfig() => new()
     {
-        return new InputFieldConfig
-        {
-            submitOn = InputFieldConfig.SubmitEnum.OnExitOrSubmit,
-            lineType = TMP_InputField.LineType.SingleLine,
-            richText = false
-        };
-    }
+        submitOn = InputFieldConfig.SubmitEnum.OnExitOrSubmit,
+        lineType = TMP_InputField.LineType.SingleLine,
+        richText = false
+    };
 
     // RiskOfOptions' dropdown treats an enum's numeric value as its position in the list.
     private static bool IsDropdownCompatibleEnum(Type type)

@@ -10,7 +10,7 @@ namespace RiskOfOptionsExtender.Discovery;
 
 internal static class PluginConfigFiles
 {
-    private const BindingFlags AnyMember = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+    private static readonly BindingFlags AnyMember = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 
     public static Dictionary<string, List<ConfigFile>> Collect()
     {
@@ -29,7 +29,7 @@ internal static class PluginConfigFiles
 
     private static Dictionary<Assembly, string> GuidByAssembly(IEnumerable<PluginInfo> plugins)
     {
-        var guidByAssembly = new Dictionary<Assembly, string>();
+        Dictionary<Assembly, string> guidByAssembly = [];
         foreach (var plugin in plugins)
         {
             var assembly = plugin.Instance.GetType().Assembly;
@@ -74,13 +74,14 @@ internal static class PluginConfigFiles
             AddDistinct(files, ConfigFileOf(() => field.FieldType, () => field.GetValue(field.IsStatic ? null : instance)));
 
         foreach (var property in type.GetProperties(AnyMember))
-            AddDistinct(files, ConfigFileOf(() => IsPlainGetter(property) ? property.PropertyType : null, () => property.GetValue(instance)));
+            AddDistinct(files, ConfigFileOf(() => PlainGetterTypeOf(property), () => property.GetValue(instance)));
     }
 
-    private static bool IsPlainGetter(PropertyInfo property)
-    {
-        return property.CanRead && property.GetIndexParameters().Length == 0;
-    }
+    private static Type PlainGetterTypeOf(PropertyInfo property) => IsPlainGetter(property)
+        ? property.PropertyType
+        : null;
+
+    private static bool IsPlainGetter(PropertyInfo property) => property.CanRead && property.GetIndexParameters().Length == 0;
 
     // A plugin's members can use types from optional mods that aren't installed, which throws as soon as they're inspected.
     private static ConfigFile ConfigFileOf(Func<Type> memberType, Func<object> readValue)
@@ -103,10 +104,7 @@ internal static class PluginConfigFiles
         }
     }
 
-    private static bool IsConfigType(Type type)
-    {
-        return type != null && (typeof(ConfigFile).IsAssignableFrom(type) || typeof(ConfigEntryBase).IsAssignableFrom(type));
-    }
+    private static bool IsConfigType(Type type) => type != null && (typeof(ConfigFile).IsAssignableFrom(type) || typeof(ConfigEntryBase).IsAssignableFrom(type));
 
     private static void AddDistinct(List<ConfigFile> files, ConfigFile file)
     {

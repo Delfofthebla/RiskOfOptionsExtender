@@ -10,10 +10,7 @@ internal sealed class RowFittingFeature(ExtenderSettings settings) : PanelFeatur
 {
     protected override bool IsEnabled => settings.OptionPageTweaks.Value;
 
-    protected override Hook CreateHook()
-    {
-        return new Hook(PanelMethods.LoadCategory, FitRowsAfterCategoryLoaded);
-    }
+    protected override Hook CreateHook() => new(PanelMethods.LoadCategory, FitRowsAfterCategoryLoaded);
 
     protected override void ApplyToOpenPanels()
     {
@@ -21,10 +18,7 @@ internal sealed class RowFittingFeature(ExtenderSettings settings) : PanelFeatur
             OptionRowFitter.AttachToRows(panel, Guard);
     }
 
-    protected override void RemoveFromOpenPanels()
-    {
-        OptionRowFitter.RevertAll();
-    }
+    protected override void RemoveFromOpenPanels() => OptionRowFitter.RevertAll();
 
     private void FitRowsAfterCategoryLoaded(Action<ModOptionPanelController, string, int> orig, ModOptionPanelController self, string modGuid, int categoryIndex)
     {

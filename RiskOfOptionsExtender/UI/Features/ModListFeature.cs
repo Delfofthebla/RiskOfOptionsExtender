@@ -23,10 +23,7 @@ internal sealed class ModListFeature : PanelFeature
 
     protected override bool IsEnabled => _settings.ModListTweaks.Value || _settings.HideEmptyMods.Value;
 
-    protected override Hook CreateHook()
-    {
-        return new Hook(PanelMethods.Start, OrganizeAfterPanelStart);
-    }
+    protected override Hook CreateHook() => new(PanelMethods.Start, OrganizeAfterPanelStart);
 
     protected override void ApplyToOpenPanels()
     {

@@ -81,9 +81,7 @@ internal static class ModMetadata
     }
 
     private static bool IsPluginsRoot(string directory)
-    {
-        return string.Equals(Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar), Path.GetFullPath(Paths.PluginPath).TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase);
-    }
+        => string.Equals(Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar), Path.GetFullPath(Paths.PluginPath).TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase);
 
     [Serializable]
     private sealed class ThunderstoreManifest

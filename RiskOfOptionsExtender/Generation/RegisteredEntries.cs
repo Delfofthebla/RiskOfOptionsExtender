@@ -10,7 +10,7 @@ internal static class RegisteredEntries
 {
     public static HashSet<ConfigEntryBase> Collect()
     {
-        var entries = new HashSet<ConfigEntryBase>();
+        HashSet<ConfigEntryBase> entries = [];
         foreach (var collection in ModSettingsManager.OptionCollection)
         {
             foreach (var option in OptionsOf(collection))

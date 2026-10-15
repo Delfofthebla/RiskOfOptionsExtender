@@ -15,10 +15,7 @@ public static class RiskOfOptionsExtenderPatcher
 
     public static IReadOnlyList<(ConfigFile File, string OwnerGuid, Assembly CreatingAssembly)> ConfigFileOrigins => ConfigFileWatch.Origins;
 
-    public static void Initialize()
-    {
-        ConfigFileWatch.Install();
-    }
+    public static void Initialize() => ConfigFileWatch.Install();
 
     public static void Patch(AssemblyDefinition assembly)
     {

@@ -4,8 +4,8 @@ namespace RiskOfOptionsExtender.UI;
 
 internal static class RectTransformExtensions
 {
-    private const int BottomLeftCorner = 0;
-    private const int TopRightCorner = 2;
+    private static readonly int BottomLeftCorner = 0;
+    private static readonly int TopRightCorner = 2;
 
     private static readonly Vector3[] _corners = new Vector3[4];
 

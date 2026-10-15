@@ -12,7 +12,7 @@ namespace RiskOfOptionsExtender.Settings;
 
 internal sealed class SkipToggles(ExtenderSettings settings)
 {
-    private const string Section = "Skip";
+    private static readonly string Section = "Skip";
 
     private readonly HashSet<string> _guidsWithToggle = [];
     private ConfigFile _file;
@@ -20,9 +20,7 @@ internal sealed class SkipToggles(ExtenderSettings settings)
 
     public void AddFor(IEnumerable<PluginInfo> plugins)
     {
-        var newPlugins = plugins
-            .Where(plugin => !_guidsWithToggle.Contains(plugin.Metadata.GUID))
-            .OrderBy(plugin => plugin.Metadata.Name, StringComparer.CurrentCultureIgnoreCase);
+        var newPlugins = plugins.Where(plugin => !_guidsWithToggle.Contains(plugin.Metadata.GUID)).OrderBy(plugin => plugin.Metadata.Name, StringComparer.CurrentCultureIgnoreCase);
 
         foreach (var plugin in newPlugins)
             Add(plugin);
@@ -49,6 +47,7 @@ internal sealed class SkipToggles(ExtenderSettings settings)
             restartRequired = true,
             checkIfDisabled = () => settings.NeverFillIn.Value
         };
+
         ExtenderSettings.AddOwnOption(new CheckBoxOption(toggle, config));
     }
 }

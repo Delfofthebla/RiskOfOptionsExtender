@@ -13,7 +13,9 @@ internal static class ModSettingExtensions
             return null;
 
         var text = row.nameLabel.GetComponent<TMP_Text>();
-        return text ? text : row.nameLabel.GetComponentInChildren<TMP_Text>(true);
+        return text
+            ? text
+            : row.nameLabel.GetComponentInChildren<TMP_Text>(true);
     }
 
     public static bool IsRestartRequired(this ModSetting row)

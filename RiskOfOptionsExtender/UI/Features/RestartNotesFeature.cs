@@ -10,20 +10,11 @@ internal sealed class RestartNotesFeature(ExtenderSettings settings) : PanelFeat
 {
     protected override bool IsEnabled => settings.OptionPageTweaks.Value;
 
-    protected override Hook CreateHook()
-    {
-        return new Hook(PanelMethods.Start, AddNotesAfterPanelStart);
-    }
+    protected override Hook CreateHook() => new(PanelMethods.Start, AddNotesAfterPanelStart);
 
-    protected override void ApplyToOpenPanels()
-    {
-        RestartNotes.Apply();
-    }
+    protected override void ApplyToOpenPanels() => RestartNotes.Apply();
 
-    protected override void RemoveFromOpenPanels()
-    {
-        RestartNotes.Remove();
-    }
+    protected override void RemoveFromOpenPanels() => RestartNotes.Remove();
 
     private void AddNotesAfterPanelStart(Action<ModOptionPanelController> orig, ModOptionPanelController self)
     {

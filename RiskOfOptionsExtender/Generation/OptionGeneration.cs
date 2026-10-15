@@ -15,7 +15,7 @@ namespace RiskOfOptionsExtender.Generation;
 
 internal static class OptionGeneration
 {
-    private const string FallbackCategory = "General";
+    private static readonly string FallbackCategory = "General";
 
     private static readonly FeatureGuard _fillInGuard = new("filling in missing options");
     private static readonly FeatureGuard _metadataGuard = new("adding missing mod icons and descriptions");
@@ -49,15 +49,12 @@ internal static class OptionGeneration
             .Where(plugin => !OptionGeneratorCoexistence.Handles(plugin))
             .ToList();
 
-        var pluginsWithFillableEntries = plugins
-            .Where(plugin => HasFillableEntries(filesByGuid[plugin.Metadata.GUID], registered))
-            .ToList();
+        var pluginsWithFillableEntries = plugins.Where(plugin => HasFillableEntries(filesByGuid[plugin.Metadata.GUID], registered)).ToList();
 
         foreach (var plugin in pluginsWithFillableEntries.Where(_settings.ShouldFillIn))
             FillIn(plugin, filesByGuid[plugin.Metadata.GUID], registered);
 
-        var pluginsWithFillIn = pluginsWithFillableEntries.Where(plugin =>
-            _filledGuids.Contains(plugin.Metadata.GUID) || HasFillableEntries(filesByGuid[plugin.Metadata.GUID], registered));
+        var pluginsWithFillIn = pluginsWithFillableEntries.Where(plugin => _filledGuids.Contains(plugin.Metadata.GUID) || HasFillableEntries(filesByGuid[plugin.Metadata.GUID], registered));
         _skipToggles.AddFor(pluginsWithFillIn);
     }
 
@@ -67,20 +64,11 @@ internal static class OptionGeneration
             ModMetadata.Apply(plugin);
     }
 
-    private static bool HasFillableEntries(List<ConfigFile> files, HashSet<ConfigEntryBase> registered)
-    {
-        return files.Any(file => EntriesOf(file).Any(entry => IsFillable(entry, registered)));
-    }
+    private static bool HasFillableEntries(List<ConfigFile> files, HashSet<ConfigEntryBase> registered) => files.SelectMany(EntriesOf).Any(entry => IsFillable(entry, registered));
 
-    private static IEnumerable<ConfigEntryBase> EntriesOf(ConfigFile file)
-    {
-        return file.Keys.Select(definition => file[definition]);
-    }
+    private static IEnumerable<ConfigEntryBase> EntriesOf(ConfigFile file) => file.Keys.Select(definition => file[definition]);
 
-    private static bool IsFillable(ConfigEntryBase entry, HashSet<ConfigEntryBase> registered)
-    {
-        return !registered.Contains(entry) && !_unfillableEntries.Contains(entry) && OptionFactory.CanCreate(entry);
-    }
+    private static bool IsFillable(ConfigEntryBase entry, HashSet<ConfigEntryBase> registered) => !registered.Contains(entry) && !_unfillableEntries.Contains(entry) && OptionFactory.CanCreate(entry);
 
     private static void FillIn(PluginInfo plugin, List<ConfigFile> files, HashSet<ConfigEntryBase> registered)
     {
@@ -154,7 +142,9 @@ internal static class OptionGeneration
             return section;
         }
 
-        return owningFile == file ? section : $"{section} ({fileLabel})";
+        return owningFile == file
+            ? section
+            : $"{section} ({fileLabel})";
     }
 
     private static bool TryClaimUniqueName(string modGuid, BaseOption option, string fileLabel)

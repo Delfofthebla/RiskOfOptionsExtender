@@ -7,7 +7,7 @@ namespace RiskOfOptionsExtender.UI.ModList;
 
 internal static class SearchField
 {
-    private const float FontSize = 22f;
+    private static readonly float FontSize = 22f;
 
     private static readonly Color Background = new(0f, 0f, 0f, 0.45f);
     private static readonly Color PlaceholderColor = new(1f, 1f, 1f, 0.4f);

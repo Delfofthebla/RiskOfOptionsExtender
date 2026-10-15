@@ -10,10 +10,7 @@ internal sealed class RestartIconFeature(ExtenderSettings settings) : PanelFeatu
 {
     protected override bool IsEnabled => settings.OptionPageTweaks.Value;
 
-    protected override Hook CreateHook()
-    {
-        return new Hook(PanelMethods.LoadCategory, AddIconsAfterCategoryLoaded);
-    }
+    protected override Hook CreateHook() => new(PanelMethods.LoadCategory, AddIconsAfterCategoryLoaded);
 
     protected override void ApplyToOpenPanels()
     {
@@ -21,10 +18,7 @@ internal sealed class RestartIconFeature(ExtenderSettings settings) : PanelFeatu
             RestartIcon.AddToRows(panel);
     }
 
-    protected override void RemoveFromOpenPanels()
-    {
-        RestartIcon.RemoveAll();
-    }
+    protected override void RemoveFromOpenPanels() => RestartIcon.RemoveAll();
 
     private void AddIconsAfterCategoryLoaded(Action<ModOptionPanelController, string, int> orig, ModOptionPanelController self, string modGuid, int categoryIndex)
     {

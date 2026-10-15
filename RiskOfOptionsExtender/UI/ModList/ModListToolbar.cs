@@ -11,9 +11,9 @@ namespace RiskOfOptionsExtender.UI.ModList;
 
 internal sealed class ModListToolbar : MonoBehaviour
 {
-    private const float Height = 64f;
-    private const float Gap = 8f;
-    private const float SortButtonWidth = 96f;
+    private static readonly float Height = 64f;
+    private static readonly float Gap = 8f;
+    private static readonly float SortButtonWidth = 96f;
 
     private ConfigEntry<ModSortOrder> _sortOrder;
     private TMP_Text _sortLabel;
@@ -48,8 +48,13 @@ internal sealed class ModListToolbar : MonoBehaviour
         Destroy(gameObject);
     }
 
-    private void Build(ModOptionsPanelPrefab panel, RectTransform scrollView, PanelBackground background, TMP_Text styleSource,
-        ConfigEntry<ModSortOrder> sortOrder, UnityAction<string> onSearchChanged)
+    private void Build(
+        ModOptionsPanelPrefab panel,
+        RectTransform scrollView,
+        PanelBackground background,
+        TMP_Text styleSource,
+        ConfigEntry<ModSortOrder> sortOrder,
+        UnityAction<string> onSearchChanged)
     {
         var modListPanel = panel.ModListPanel.transform;
         gameObject.layer = modListPanel.gameObject.layer;
@@ -102,21 +107,19 @@ internal sealed class ModListToolbar : MonoBehaviour
             _sortOrder.SettingChanged -= OnSortOrderChanged;
     }
 
-    private void OnSortOrderChanged(object sender, EventArgs args)
-    {
-        RefreshSortLabel();
-    }
+    private void OnSortOrderChanged(object sender, EventArgs args) => RefreshSortLabel();
 
-    private void CycleSortOrder()
-    {
-        _sortOrder.Value = _sortOrder.Value == ModSortOrder.Alphabetical
-            ? ModSortOrder.ReverseAlphabetical
-            : ModSortOrder.Alphabetical;
-    }
+    private void CycleSortOrder() => _sortOrder.Value = _sortOrder.Value == ModSortOrder.Alphabetical
+        ? ModSortOrder.ReverseAlphabetical
+        : ModSortOrder.Alphabetical;
 
     private void RefreshSortLabel()
     {
         if (_sortLabel)
-            _sortLabel.text = _sortOrder.Value == ModSortOrder.Alphabetical ? "A-Z" : "Z-A";
+        {
+            _sortLabel.text = _sortOrder.Value == ModSortOrder.Alphabetical
+                ? "A-Z"
+                : "Z-A";
+        }
     }
 }

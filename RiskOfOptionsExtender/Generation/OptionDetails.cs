@@ -2,14 +2,14 @@ using RiskOfOptions.OptionConfigs;
 
 namespace RiskOfOptionsExtender.Generation;
 
-internal readonly struct OptionDetails(string category, string name, string description, bool restartRequired)
+internal sealed record OptionDetails(string Category, string Name, string Description, bool RestartRequired)
 {
     public T ApplyTo<T>(T config) where T : BaseOptionConfig
     {
-        config.category = category;
-        config.name = name;
-        config.description = description;
-        config.restartRequired = restartRequired;
+        config.category = Category;
+        config.name = Name;
+        config.description = Description;
+        config.restartRequired = RestartRequired;
         return config;
     }
 }

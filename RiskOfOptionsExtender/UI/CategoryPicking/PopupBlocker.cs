@@ -7,7 +7,7 @@ namespace RiskOfOptionsExtender.UI.CategoryPicking;
 
 internal sealed class PopupBlocker : MonoBehaviour, IPointerDownHandler, IPointerClickHandler
 {
-    private const float CoverSize = 20000f;
+    private static readonly float CoverSize = 20000f;
 
     private Canvas _canvas;
     private Action _onPressed;
@@ -37,10 +37,7 @@ internal sealed class PopupBlocker : MonoBehaviour, IPointerDownHandler, IPointe
         _canvas.sortingOrder = popupSortingOrder - 1;
     }
 
-    public void OnPointerDown(PointerEventData eventData)
-    {
-        _onPressed();
-    }
+    public void OnPointerDown(PointerEventData eventData) => _onPressed();
 
     public void OnPointerClick(PointerEventData eventData)
     {

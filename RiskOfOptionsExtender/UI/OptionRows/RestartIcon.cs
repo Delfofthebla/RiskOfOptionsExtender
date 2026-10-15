@@ -11,9 +11,9 @@ namespace RiskOfOptionsExtender.UI.OptionRows;
 
 internal sealed class RestartIcon : MonoBehaviour
 {
-    private const float Size = 26f;
-    private const float Gap = 6f;
-    private const string SpritePath = "assets/RiskOfOptions/ror2RestartSymbol.png";
+    private static readonly float Size = 26f;
+    private static readonly float Gap = 6f;
+    private static readonly string SpritePath = "assets/RiskOfOptions/ror2RestartSymbol.png";
 
     private static readonly Color Tint = new(1f, 0.5f, 0.5f, 0.85f);
     private static readonly HashSet<RestartIcon> _liveIcons = [];
@@ -86,8 +86,5 @@ internal sealed class RestartIcon : MonoBehaviour
         Destroy(gameObject);
     }
 
-    private void OnDestroy()
-    {
-        _liveIcons.Remove(this);
-    }
+    private void OnDestroy() => _liveIcons.Remove(this);
 }

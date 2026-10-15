@@ -23,7 +23,9 @@ internal sealed class NumericRange(decimal min, decimal max)
         {
             var min = Convert.ToDecimal(type.GetProperty("MinValue")!.GetValue(acceptableValues), CultureInfo.InvariantCulture);
             var max = Convert.ToDecimal(type.GetProperty("MaxValue")!.GetValue(acceptableValues), CultureInfo.InvariantCulture);
-            return min < max ? new NumericRange(min, max) : null;
+            return min < max
+                ? new(min, max)
+                : null;
         }
         catch (OverflowException)
         {

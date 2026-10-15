@@ -8,6 +8,8 @@ internal static class HeaderNavigationExtensions
     {
         var index = navigation.currentHeaderIndex;
         var headers = navigation.headers;
-        return index >= 0 && index < headers.Count ? headers[index].headerButton : null;
+        return index >= 0 && index < headers.Count
+            ? headers[index].headerButton
+            : null;
     }
 }

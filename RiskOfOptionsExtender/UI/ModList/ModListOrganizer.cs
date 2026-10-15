@@ -70,10 +70,7 @@ internal sealed class ModListOrganizer : MonoBehaviour
             organizer.RemovePins();
     }
 
-    public bool IsPinned(string modGuid)
-    {
-        return _settings.PinnedMods.Contains(modGuid);
-    }
+    public bool IsPinned(string modGuid) => _settings.PinnedMods.Contains(modGuid);
 
     public void TogglePin(string modGuid)
     {
@@ -85,10 +82,7 @@ internal sealed class ModListOrganizer : MonoBehaviour
     {
         var navigation = panel.ModListPanel.GetRequiredComponent<HGHeaderNavigationController>();
         var originalHeaders = navigation.headers.ToList();
-        var entries = originalHeaders
-            .Where(header => header.headerButton is ModListButton)
-            .Select(EntryOf)
-            .ToList();
+        var entries = originalHeaders.Where(header => header.headerButton is ModListButton).Select(EntryOf).ToList();
 
         var organizer = panel.ModListPanel.AddComponent<ModListOrganizer>();
         organizer._panel = panel;
@@ -107,7 +101,7 @@ internal sealed class ModListOrganizer : MonoBehaviour
     {
         var button = (ModListButton)header.headerButton;
         var collection = ModSettingsManager.OptionCollection[button.modGuid];
-        return new ModListEntry(button, header, DisplayNameOf(collection), RegisteredEntries.CountOptions(collection) == 0);
+        return new(button, header, DisplayNameOf(collection), RegisteredEntries.CountOptions(collection) == 0);
     }
 
     private void Refresh()
@@ -177,7 +171,9 @@ internal sealed class ModListOrganizer : MonoBehaviour
     private SuppressedRaycasts SuppressSelectionHighlightRaycasts()
     {
         var highlight = _navigation.headerHighlightObject;
-        return highlight ? SuppressedRaycasts.Under(highlight) : null;
+        return highlight
+            ? SuppressedRaycasts.Under(highlight)
+            : null;
     }
 
     private void ReleaseList()
@@ -202,16 +198,13 @@ internal sealed class ModListOrganizer : MonoBehaviour
         ReorderGuarded();
     }
 
-    private void ReorderGuarded()
-    {
-        _guards.Organizer.Run("organize the mod list", Reorder);
-    }
+    private void ReorderGuarded() => _guards.Organizer.Run("organize the mod list", Reorder);
 
     private void Reorder()
     {
         var selectedButton = _navigation.SelectedButton();
         var visibleEntries = SortEntries(_entries.Where(IsVisible)).ToList();
-        var visibleSet = new HashSet<ModListEntry>(visibleEntries);
+        HashSet<ModListEntry> visibleSet = [.. visibleEntries];
 
         foreach (var entry in _entries)
             entry.Button.gameObject.SetActive(visibleSet.Contains(entry));
@@ -237,10 +230,7 @@ internal sealed class ModListOrganizer : MonoBehaviour
             _settings.SortOrder.SettingChanged -= OnSortOrderChanged;
     }
 
-    private void OnSortOrderChanged(object sender, EventArgs args)
-    {
-        ReorderGuarded();
-    }
+    private void OnSortOrderChanged(object sender, EventArgs args) => ReorderGuarded();
 
     private IEnumerable<ModListEntry> SortEntries(IEnumerable<ModListEntry> entries)
     {
@@ -259,13 +249,8 @@ internal sealed class ModListOrganizer : MonoBehaviour
         if (entry.IsEmpty && _settings.HideEmptyMods.Value)
             return false;
 
-        return _filter.Length == 0
-            || entry.DisplayName.IndexOf(_filter, StringComparison.CurrentCultureIgnoreCase) >= 0
-            || entry.ModGuid.IndexOf(_filter, StringComparison.OrdinalIgnoreCase) >= 0;
+        return _filter.Length == 0 || entry.DisplayName.IndexOf(_filter, StringComparison.CurrentCultureIgnoreCase) >= 0 || entry.ModGuid.IndexOf(_filter, StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
-    private static string DisplayNameOf(OptionCollection collection)
-    {
-        return RichTextTag.Replace(Language.GetString(collection.NameToken), "").Trim();
-    }
+    private static string DisplayNameOf(OptionCollection collection) => RichTextTag.Replace(Language.GetString(collection.NameToken), "").Trim();
 }

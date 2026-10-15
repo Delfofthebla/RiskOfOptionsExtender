@@ -1,27 +1,8 @@
 namespace RiskOfOptionsExtender.UI.CategoryPicking;
 
-internal readonly struct PickerChoice
+internal sealed record PickerChoice(string Text, int CategoryIndex, bool IsHeader)
 {
-    private PickerChoice(string text, int categoryIndex, bool isHeader)
-    {
-        Text = text;
-        CategoryIndex = categoryIndex;
-        IsHeader = isHeader;
-    }
+    public static PickerChoice Header(string text) => new(text, -1, true);
 
-    public string Text { get; }
-
-    public int CategoryIndex { get; }
-
-    public bool IsHeader { get; }
-
-    public static PickerChoice Header(string text)
-    {
-        return new PickerChoice(text, -1, true);
-    }
-
-    public static PickerChoice Category(string text, int categoryIndex)
-    {
-        return new PickerChoice(text, categoryIndex, false);
-    }
+    public static PickerChoice Category(string text, int categoryIndex) => new(text, categoryIndex, false);
 }

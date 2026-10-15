@@ -9,7 +9,7 @@ namespace RiskOfOptionsExtender.Generation;
 
 internal static class ProxyEntries
 {
-    private const string Section = "Proxies";
+    private static readonly string Section = "Proxies";
 
     private static readonly HashSet<Type> SmallIntegers = [typeof(sbyte), typeof(byte), typeof(short), typeof(ushort)];
     private static readonly HashSet<Type> LargeIntegers = [typeof(uint), typeof(long), typeof(ulong)];
@@ -19,15 +19,11 @@ internal static class ProxyEntries
     private static ConfigFile _file;
     private static int _nextKey;
 
-    public static ConfigEntryBase SourceOf(ConfigEntryBase proxy)
-    {
-        return _sourceByProxy.TryGetValue(proxy, out var source) ? source : null;
-    }
+    public static ConfigEntryBase SourceOf(ConfigEntryBase proxy) => _sourceByProxy.TryGetValue(proxy, out var source)
+        ? source
+        : null;
 
-    public static bool CanProxy(ConfigEntryBase source)
-    {
-        return BinderFor(source) != null;
-    }
+    public static bool CanProxy(ConfigEntryBase source) => BinderFor(source) != null;
 
     public static ConfigEntryBase GetOrCreate(ConfigEntryBase source)
     {
@@ -70,26 +66,29 @@ internal static class ProxyEntries
     {
         var type = source.SettingType;
         var range = NumericRange.Of(source);
-        var acceptableValues = range == null ? null : new AcceptableValueRange<float>((float)range.Min, (float)range.Max);
+        var acceptableValues = range == null
+            ? null
+            : new AcceptableValueRange<float>((float)range.Min, (float)range.Max);
 
-        return Bind(source, value => Convert.ToSingle(value, CultureInfo.InvariantCulture),
-            number => Convert.ChangeType(number.ToString(CultureInfo.InvariantCulture), type, CultureInfo.InvariantCulture), acceptableValues);
+        return Bind(
+            source,
+            value => Convert.ToSingle(value, CultureInfo.InvariantCulture),
+            number => Convert.ChangeType(number.ToString(CultureInfo.InvariantCulture), type, CultureInfo.InvariantCulture),
+            acceptableValues);
     }
 
     private static ConfigEntryBase BindInt(ConfigEntryBase source)
     {
         var type = source.SettingType;
         var range = NumericRange.Of(source);
-        var acceptableValues = range == null ? null : new AcceptableValueRange<int>((int)range.Min, (int)range.Max);
+        var acceptableValues = range == null
+            ? null
+            : new AcceptableValueRange<int>((int)range.Min, (int)range.Max);
 
-        return Bind(source, value => Convert.ToInt32(value, CultureInfo.InvariantCulture),
-            number => Convert.ChangeType(number, type, CultureInfo.InvariantCulture), acceptableValues);
+        return Bind(source, value => Convert.ToInt32(value, CultureInfo.InvariantCulture), number => Convert.ChangeType(number, type, CultureInfo.InvariantCulture), acceptableValues);
     }
 
-    private static ConfigEntryBase BindKeyCode(ConfigEntryBase source)
-    {
-        return Bind(source, value => new KeyboardShortcut((KeyCode)value), shortcut => shortcut.MainKey, null);
-    }
+    private static ConfigEntryBase BindKeyCode(ConfigEntryBase source) => Bind(source, value => new KeyboardShortcut((KeyCode)value), shortcut => shortcut.MainKey, null);
 
     private static ConfigEntryBase BindText(ConfigEntryBase source)
     {

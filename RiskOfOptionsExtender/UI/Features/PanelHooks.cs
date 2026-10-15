@@ -17,11 +17,7 @@ internal static class PanelHooks
         new FeatureGuard("filling in missing options").Run("hook the settings panel's Start", InstallStartHook);
 
         SyncWith([settings.ModListTweaks, settings.HideEmptyMods], new ModListFeature(settings));
-        SyncWith([settings.OptionPageTweaks],
-            new RowFittingFeature(settings),
-            new RestartIconFeature(settings),
-            new RestartNotesFeature(settings),
-            new CategoryPickerFeature(settings));
+        SyncWith([settings.OptionPageTweaks], new RowFittingFeature(settings), new RestartIconFeature(settings), new RestartNotesFeature(settings), new CategoryPickerFeature(settings));
     }
 
     private static void SyncWith(ConfigEntry<bool>[] settings, params PanelFeature[] features)
@@ -38,10 +34,7 @@ internal static class PanelHooks
             feature.Sync();
     }
 
-    private static void InstallStartHook()
-    {
-        _startHook = new Hook(PanelMethods.Start, BeforePanelStart);
-    }
+    private static void InstallStartHook() => _startHook = new Hook(PanelMethods.Start, BeforePanelStart);
 
     private static void BeforePanelStart(Action<ModOptionPanelController> orig, ModOptionPanelController self)
     {

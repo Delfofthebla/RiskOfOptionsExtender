@@ -12,8 +12,7 @@ internal static class CategoryGroups
             _fileLabels[(modGuid, category)] = fileLabel;
     }
 
-    public static string FileLabelOf(string modGuid, string category)
-    {
-        return _fileLabels.TryGetValue((modGuid, category), out var fileLabel) ? fileLabel : null;
-    }
+    public static string FileLabelOf(string modGuid, string category) => _fileLabels.TryGetValue((modGuid, category), out var fileLabel)
+        ? fileLabel
+        : null;
 }

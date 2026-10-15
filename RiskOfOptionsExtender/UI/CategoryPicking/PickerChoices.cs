@@ -10,12 +10,10 @@ internal static class PickerChoices
 {
     public static List<PickerChoice> For(OptionCollection collection)
     {
-        var groups = Enumerable.Range(0, collection.CategoryCount)
-            .Select(index => CategoryGroups.FileLabelOf(collection.ModGuid, collection[index].name) ?? collection.ModName)
-            .ToList();
+        var groups = Enumerable.Range(0, collection.CategoryCount).Select(index => CategoryGroups.FileLabelOf(collection.ModGuid, collection[index].name) ?? collection.ModName).ToList();
         var isGrouped = groups.Distinct().Count() > 1;
 
-        var choices = new List<PickerChoice>();
+        List<PickerChoice> choices = [];
         string currentGroup = null;
         for (var index = 0; index < collection.CategoryCount; index++)
         {

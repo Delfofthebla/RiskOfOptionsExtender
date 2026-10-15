@@ -7,12 +7,12 @@ namespace RiskOfOptionsExtender.UI.CategoryPicking;
 
 internal sealed class PickerItem : PointerTarget
 {
-    private const float CategoryHeight = 40f;
-    private const float HeaderHeight = 32f;
-    private const float CategoryFontSize = 22f;
-    private const float HeaderFontSize = 18f;
-    private const float CategoryIndent = 24f;
-    private const float HeaderIndent = 10f;
+    private static readonly float CategoryHeight = 40f;
+    private static readonly float HeaderHeight = 32f;
+    private static readonly float CategoryFontSize = 22f;
+    private static readonly float HeaderFontSize = 18f;
+    private static readonly float CategoryIndent = 24f;
+    private static readonly float HeaderIndent = 10f;
 
     private static readonly Color IdleColor = new(1f, 1f, 1f, 0f);
     private static readonly Color HoveredColor = new(1f, 1f, 1f, 0.1f);
@@ -25,10 +25,7 @@ internal sealed class PickerItem : PointerTarget
 
     public int CategoryIndex { get; private set; }
 
-    public static float HeightOf(PickerChoice choice)
-    {
-        return choice.IsHeader ? HeaderHeight : CategoryHeight;
-    }
+    public static float HeightOf(PickerChoice choice) => choice.IsHeader ? HeaderHeight : CategoryHeight;
 
     public static void CreateHeader(Transform parent, TMP_Text styleSource, string text)
     {
@@ -60,10 +57,7 @@ internal sealed class PickerItem : PointerTarget
         Refresh();
     }
 
-    protected override void OnLeftClick()
-    {
-        _onSelected(CategoryIndex);
-    }
+    protected override void OnLeftClick() => _onSelected(CategoryIndex);
 
     protected override void Refresh()
     {

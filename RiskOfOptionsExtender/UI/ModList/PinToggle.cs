@@ -6,8 +6,8 @@ namespace RiskOfOptionsExtender.UI.ModList;
 
 internal sealed class PinToggle : PointerTarget
 {
-    private const float Size = 28f;
-    private const float RightInset = 12f;
+    private static readonly float Size = 28f;
+    private static readonly float RightInset = 12f;
 
     private static readonly Color PinnedColor = new(1f, 0.78f, 0.25f, 1f);
     private static readonly Color UnpinnedColor = new(1f, 1f, 1f, 0.2f);
@@ -39,7 +39,7 @@ internal sealed class PinToggle : PointerTarget
         toggle._modGuid = button.modGuid;
         toggle._organizer = organizer;
         toggle._label = label;
-        toggle._rowRaycasts = SuppressedRaycasts.Under(button.gameObject, button.gameObject, pinObject);
+        toggle._rowRaycasts = SuppressedRaycasts.Under(button.gameObject, [button.gameObject, pinObject]);
         toggle.Refresh();
 
         label.offsetMax -= new Vector2(Size + RightInset, 0);

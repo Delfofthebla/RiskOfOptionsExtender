@@ -8,18 +8,12 @@ namespace RiskOfOptionsExtender.Discovery;
 
 internal static class ConfigFileRegistry
 {
-    private const string PatcherAssemblyName = "RiskOfOptionsExtender.Patcher";
-    private const string PatcherTypeName = "RiskOfOptionsExtender.Patcher.RiskOfOptionsExtenderPatcher";
+    private static readonly string PatcherAssemblyName = "RiskOfOptionsExtender.Patcher";
+    private static readonly string PatcherTypeName = "RiskOfOptionsExtender.Patcher.RiskOfOptionsExtenderPatcher";
 
     private static Func<IReadOnlyList<(ConfigFile File, string OwnerGuid, Assembly CreatingAssembly)>> _readOrigins = () => [];
 
-    public static IEnumerable<ConfigFileOrigin> Origins
-    {
-        get
-        {
-            return _readOrigins().Select(origin => new ConfigFileOrigin(origin.File, origin.OwnerGuid, origin.CreatingAssembly));
-        }
-    }
+    public static IEnumerable<ConfigFileOrigin> Origins => _readOrigins().Select(origin => new ConfigFileOrigin(origin.File, origin.OwnerGuid, origin.CreatingAssembly));
 
     public static void Install()
     {
@@ -27,8 +21,8 @@ internal static class ConfigFileRegistry
             return;
 
         RiskOfOptionsExtenderPlugin.Log.LogWarning(
-            "The RiskOfOptionsExtender patcher isn't running, so config files that earlier-loading mods keep outside their plugin class " +
-            "won't get menu options. Reinstalling the mod restores the patcher.");
+            "The RiskOfOptionsExtender patcher isn't running, so config files that earlier-loading mods keep outside their plugin class won't get menu options. "
+                + "Reinstalling the mod restores the patcher.");
 
         ConfigFileWatch.Install();
         _readOrigins = () => ConfigFileWatch.Origins;
@@ -36,9 +30,7 @@ internal static class ConfigFileRegistry
 
     private static bool TryUsePatcher()
     {
-        var patcher = AppDomain.CurrentDomain.GetAssemblies()
-            .FirstOrDefault(assembly => assembly.GetName().Name == PatcherAssemblyName)
-            ?.GetType(PatcherTypeName);
+        var patcher = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(assembly => assembly.GetName().Name == PatcherAssemblyName)?.GetType(PatcherTypeName);
 
         if (patcher?.GetProperty("IsWatching")?.GetValue(null) is not true)
             return false;

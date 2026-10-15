@@ -25,9 +25,9 @@ internal sealed class FeatureGuard(string featureName, Action onTripped = null)
     private void Trip(string purpose, Exception exception)
     {
         _tripped = true;
-        RiskOfOptionsExtenderPlugin.Log.LogError(
-            $"Failed to {purpose}. Turned off {featureName} until the game restarts. " +
-            $"(Risk Of Options Extender {RiskOfOptionsExtenderPlugin.Version}, Risk Of Options {InstalledRiskOfOptionsVersion()})\n{exception}");
+        RiskOfOptionsExtenderPlugin.Log.LogError($"Failed to {purpose}. Turned off {featureName} until the game restarts. "
+            + $"(Risk Of Options Extender {RiskOfOptionsExtenderPlugin.VERSION}, Risk Of Options {InstalledRiskOfOptionsVersion()})"
+            + $"\n{exception}");
 
         try
         {
@@ -39,10 +39,7 @@ internal sealed class FeatureGuard(string featureName, Action onTripped = null)
         }
     }
 
-    private static string InstalledRiskOfOptionsVersion()
-    {
-        return Chainloader.PluginInfos.TryGetValue(RiskOfOptions.PluginInfo.PLUGIN_GUID, out var riskOfOptions)
-            ? riskOfOptions.Metadata.Version.ToString()
-            : "not loaded";
-    }
+    private static string InstalledRiskOfOptionsVersion() => Chainloader.PluginInfos.TryGetValue(RiskOfOptions.PluginInfo.PLUGIN_GUID, out var riskOfOptions)
+        ? riskOfOptions.Metadata.Version.ToString()
+        : "not loaded";
 }

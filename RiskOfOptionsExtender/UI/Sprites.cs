@@ -5,7 +5,7 @@ namespace RiskOfOptionsExtender.UI;
 
 internal static class Sprites
 {
-    private const string PinStarResource = "RiskOfOptionsExtender.PinStar.png";
+    private static readonly string PinStarResource = "RiskOfOptionsExtender.PinStar.png";
 
     private static Sprite _pinStar;
 

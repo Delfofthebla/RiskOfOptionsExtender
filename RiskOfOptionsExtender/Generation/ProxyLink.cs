@@ -40,10 +40,7 @@ internal sealed class ProxyLink<TProxy>(ConfigEntryBase source, ConfigEntry<TPro
         PullFromSource();
     }
 
-    private void PullFromSource()
-    {
-        proxy.Value = toProxy(source.BoxedValue);
-    }
+    private void PullFromSource() => proxy.Value = toProxy(source.BoxedValue);
 
     private void Sync(Action sync)
     {

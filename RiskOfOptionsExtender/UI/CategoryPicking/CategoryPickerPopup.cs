@@ -8,13 +8,13 @@ namespace RiskOfOptionsExtender.UI.CategoryPicking;
 
 internal sealed class CategoryPickerPopup : MonoBehaviour
 {
-    private const float Width = 360f;
-    private const float MaxHeight = 520f;
-    private const float Padding = 6f;
-    private const float Spacing = 2f;
-    private const float ScrollbarWidth = 24f;
-    private const float GapBelowButton = 4f;
-    private const int SortingOrder = 30000;
+    private static readonly float Width = 360f;
+    private static readonly float MaxHeight = 520f;
+    private static readonly float Padding = 6f;
+    private static readonly float Spacing = 2f;
+    private static readonly float ScrollbarWidth = 24f;
+    private static readonly float GapBelowButton = 4f;
+    private static readonly int SortingOrder = 30000;
 
     private readonly List<PickerItem> _items = [];
     private RectTransform _rect;
@@ -58,10 +58,7 @@ internal sealed class CategoryPickerPopup : MonoBehaviour
         ScrollToCurrent(choices, currentCategory);
     }
 
-    public void Close()
-    {
-        gameObject.SetActive(false);
-    }
+    public void Close() => gameObject.SetActive(false);
 
     public void MarkCurrent(int categoryIndex)
     {
@@ -172,7 +169,9 @@ internal sealed class CategoryPickerPopup : MonoBehaviour
 
         Canvas.ForceUpdateCanvases();
         var scrollable = _content.rect.height - ((RectTransform)_scroll.viewport).rect.height;
-        _scroll.verticalNormalizedPosition = scrollable <= 0 ? 1 : 1 - Mathf.Clamp01(offset / scrollable);
+        _scroll.verticalNormalizedPosition = scrollable <= 0
+            ? 1
+            : 1 - Mathf.Clamp01(offset / scrollable);
     }
 
     private static float ContentHeight(IReadOnlyList<PickerChoice> choices)
