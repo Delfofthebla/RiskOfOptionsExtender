@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using RiskOfOptions.Components.Options;
 using RiskOfOptions.Components.Panel;
 using RiskOfOptionsExtender.Resilience;
@@ -28,7 +29,7 @@ internal sealed class OptionRowFitter : MonoBehaviour
 
     public static void RevertAll()
     {
-        foreach (var fitter in new List<OptionRowFitter>(_liveFitters))
+        foreach (var fitter in _liveFitters.ToList())
             fitter.Revert();
     }
 
@@ -110,12 +111,12 @@ internal sealed class OptionRowFitter : MonoBehaviour
     // few pixels from it.
     private void AlignCheckboxWithOtherControls()
     {
-        var checkboxRight = _row.InverseTransformPoint(_checkbox.rectTransform.WorldTopRight()).x;
-        var shift = _row.rect.xMax - CheckboxRightInset - checkboxRight;
-
         var container = ChildOfRowContaining(_checkbox.transform);
         if (!container)
             return;
+
+        var checkboxRight = _row.InverseTransformPoint(_checkbox.rectTransform.WorldTopRight()).x;
+        var shift = _row.rect.xMax - CheckboxRightInset - checkboxRight;
 
         _checkboxContainerOriginalPosition = container.anchoredPosition;
         _movedCheckboxContainer = container;

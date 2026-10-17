@@ -3,15 +3,7 @@ using RoR2.UI;
 
 namespace RiskOfOptionsExtender.UI.ModList;
 
-internal sealed class ModListEntry(ModListButton button, HGHeaderNavigationController.Header header, string displayName, bool isEmpty)
+internal sealed record ModListEntry(ModListButton Button, HGHeaderNavigationController.Header Header, string DisplayName, bool IsEmpty)
 {
-    public ModListButton Button { get; } = button;
-
-    public HGHeaderNavigationController.Header Header { get; } = header;
-
-    public string DisplayName { get; } = displayName;
-
-    public bool IsEmpty { get; } = isEmpty;
-
     public string ModGuid => Button.modGuid;
 }

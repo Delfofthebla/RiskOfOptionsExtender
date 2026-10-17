@@ -22,6 +22,8 @@ internal static class OptionFactory
         [typeof(Color)] = (entry, details) => new ColorOption((ConfigEntry<Color>)entry, details.ApplyTo(new ColorOptionConfig()))
     };
 
+    private static readonly Dictionary<Type, bool> _dropdownCompatibilityByType = [];
+
     public static bool CanCreate(ConfigEntryBase entry) => HasNativeControl(entry.SettingType) || ProxyEntries.CanProxy(entry);
 
     public static BaseOption Create(ConfigEntryBase entry, OptionDetails details)
@@ -64,8 +66,16 @@ internal static class OptionFactory
         richText = false
     };
 
-    // RiskOfOptions' dropdown treats an enum's numeric value as its position in the list.
     private static bool IsDropdownCompatibleEnum(Type type)
+    {
+        if (!_dropdownCompatibilityByType.TryGetValue(type, out var compatible))
+            _dropdownCompatibilityByType[type] = compatible = IsEnumWithPositionalValues(type);
+
+        return compatible;
+    }
+
+    // RiskOfOptions' dropdown treats an enum's numeric value as its position in the list.
+    private static bool IsEnumWithPositionalValues(Type type)
     {
         if (!type.IsEnum || type.IsDefined(typeof(FlagsAttribute), false))
             return false;

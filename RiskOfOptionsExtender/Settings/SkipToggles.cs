@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using BepInEx;
 using BepInEx.Configuration;
@@ -12,11 +11,8 @@ namespace RiskOfOptionsExtender.Settings;
 
 internal sealed class SkipToggles(ExtenderSettings settings)
 {
-    private static readonly string Section = "Skip";
-
+    private readonly UnsavedConfigFile _file = new("SkipToggles");
     private readonly HashSet<string> _guidsWithToggle = [];
-    private ConfigFile _file;
-    private int _nextKey;
 
     public void AddFor(IEnumerable<PluginInfo> plugins)
     {
@@ -31,10 +27,7 @@ internal sealed class SkipToggles(ExtenderSettings settings)
         var guid = plugin.Metadata.GUID;
         var name = plugin.Metadata.Name;
 
-        _file ??= UnsavedConfigFiles.Create("SkipToggles");
-
-        var key = (_nextKey++).ToString(CultureInfo.InvariantCulture);
-        var toggle = _file.Bind(Section, key, false, $"Don't add the options \"{name}\" leaves out of this menu.");
+        var toggle = _file.Bind(false, new ConfigDescription($"Don't add the options \"{name}\" leaves out of this menu."));
         toggle.Value = settings.SkippedMods.Contains(guid);
         toggle.SettingChanged += (_, _) => settings.SkippedMods.Set(guid, toggle.Value);
         settings.SkippedMods.Changed += () => toggle.Value = settings.SkippedMods.Contains(guid);

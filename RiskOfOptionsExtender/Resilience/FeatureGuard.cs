@@ -25,9 +25,10 @@ internal sealed class FeatureGuard(string featureName, Action onTripped = null)
     private void Trip(string purpose, Exception exception)
     {
         _tripped = true;
-        RiskOfOptionsExtenderPlugin.Log.LogError($"Failed to {purpose}. Turned off {featureName} until the game restarts. "
-            + $"(Risk Of Options Extender {RiskOfOptionsExtenderPlugin.VERSION}, Risk Of Options {InstalledRiskOfOptionsVersion()})"
-            + $"\n{exception}");
+        RiskOfOptionsExtenderPlugin.Log.LogError(
+            $"Failed to {purpose}. Turned off {featureName} until the game restarts. "
+                + $"(Risk Of Options Extender {RiskOfOptionsExtenderPlugin.VERSION}, Risk Of Options {InstalledRiskOfOptionsVersion()})"
+                + $"\n{exception}");
 
         try
         {

@@ -12,6 +12,8 @@ internal static class PluginConfigFiles
 {
     private static readonly BindingFlags AnyMember = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 
+    private static readonly Dictionary<Type, MemberInfo[]> _configMembersByType = [];
+
     public static Dictionary<string, List<ConfigFile>> Collect()
     {
         var plugins = Chainloader.PluginInfos.Values.Where(plugin => plugin.Instance).ToList();
@@ -40,7 +42,10 @@ internal static class PluginConfigFiles
         return guidByAssembly;
     }
 
-    private static void AddRegisteredFile(ConfigFileOrigin origin, Dictionary<string, List<ConfigFile>> filesByGuid, Dictionary<Assembly, string> guidByAssembly)
+    private static void AddRegisteredFile(
+        (ConfigFile File, string OwnerGuid, Assembly CreatingAssembly) origin,
+        Dictionary<string, List<ConfigFile>> filesByGuid,
+        Dictionary<Assembly, string> guidByAssembly)
     {
         var guid = origin.OwnerGuid;
         if (guid == null && origin.CreatingAssembly != null)
@@ -69,29 +74,47 @@ internal static class PluginConfigFiles
 
     private static void AddMemberFiles(BaseUnityPlugin instance, List<ConfigFile> files)
     {
-        var type = instance.GetType();
-        foreach (var field in type.GetFields(AnyMember))
-            AddDistinct(files, ConfigFileOf(() => field.FieldType, () => field.GetValue(field.IsStatic ? null : instance)));
-
-        foreach (var property in type.GetProperties(AnyMember))
-            AddDistinct(files, ConfigFileOf(() => PlainGetterTypeOf(property), () => property.GetValue(instance)));
+        foreach (var member in ConfigMembersOf(instance.GetType()))
+            AddDistinct(files, ConfigFileIn(member, instance));
     }
 
-    private static Type PlainGetterTypeOf(PropertyInfo property) => IsPlainGetter(property)
-        ? property.PropertyType
-        : null;
+    private static MemberInfo[] ConfigMembersOf(Type pluginType)
+    {
+        if (!_configMembersByType.TryGetValue(pluginType, out var members))
+            _configMembersByType[pluginType] = members = [.. pluginType.GetMembers(AnyMember).Where(HoldsConfig)];
 
-    private static bool IsPlainGetter(PropertyInfo property) => property.CanRead && property.GetIndexParameters().Length == 0;
+        return members;
+    }
 
     // A plugin's members can use types from optional mods that aren't installed, which throws as soon as they're inspected.
-    private static ConfigFile ConfigFileOf(Func<Type> memberType, Func<object> readValue)
+    private static bool HoldsConfig(MemberInfo member)
     {
         try
         {
-            if (!IsConfigType(memberType()))
-                return null;
+            return IsConfigType(TypeOf(member));
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
-            return readValue() switch
+    private static Type TypeOf(MemberInfo member) => member switch
+    {
+        FieldInfo field => field.FieldType,
+        PropertyInfo property when IsPlainGetter(property) => property.PropertyType,
+        _ => null
+    };
+
+    private static bool IsPlainGetter(PropertyInfo property) => property.CanRead && property.GetIndexParameters().Length == 0;
+
+    private static bool IsConfigType(Type type) => type != null && (typeof(ConfigFile).IsAssignableFrom(type) || typeof(ConfigEntryBase).IsAssignableFrom(type));
+
+    private static ConfigFile ConfigFileIn(MemberInfo member, BaseUnityPlugin instance)
+    {
+        try
+        {
+            return ValueOf(member, instance) switch
             {
                 ConfigFile file => file,
                 ConfigEntryBase entry => entry.ConfigFile,
@@ -104,7 +127,9 @@ internal static class PluginConfigFiles
         }
     }
 
-    private static bool IsConfigType(Type type) => type != null && (typeof(ConfigFile).IsAssignableFrom(type) || typeof(ConfigEntryBase).IsAssignableFrom(type));
+    private static object ValueOf(MemberInfo member, BaseUnityPlugin instance) => member is FieldInfo field
+        ? field.GetValue(instance)
+        : ((PropertyInfo)member).GetValue(instance);
 
     private static void AddDistinct(List<ConfigFile> files, ConfigFile file)
     {

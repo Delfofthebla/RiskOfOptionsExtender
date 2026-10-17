@@ -3,7 +3,7 @@ using BepInEx.Configuration;
 
 namespace RiskOfOptionsExtender.Generation;
 
-internal sealed class ProxyLink<TProxy>(ConfigEntryBase source, ConfigEntry<TProxy> proxy, Func<object, TProxy> toProxy, Func<TProxy, object> toSource)
+internal sealed class ProxyLink<TProxy>(ConfigEntryBase source, ConfigEntry<TProxy> proxy, Func<object, TProxy> toProxy, Func<TProxy, object> toSource) : IDisposable
 {
     private bool _syncing;
 
@@ -12,6 +12,12 @@ internal sealed class ProxyLink<TProxy>(ConfigEntryBase source, ConfigEntry<TPro
         PullFromSource();
         proxy.SettingChanged += OnProxyChanged;
         source.ConfigFile.SettingChanged += OnSourceFileChanged;
+    }
+
+    public void Dispose()
+    {
+        proxy.SettingChanged -= OnProxyChanged;
+        source.ConfigFile.SettingChanged -= OnSourceFileChanged;
     }
 
     private void OnProxyChanged(object sender, EventArgs args)

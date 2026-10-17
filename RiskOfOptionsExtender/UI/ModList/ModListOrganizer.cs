@@ -101,7 +101,7 @@ internal sealed class ModListOrganizer : MonoBehaviour
     {
         var button = (ModListButton)header.headerButton;
         var collection = ModSettingsManager.OptionCollection[button.modGuid];
-        return new(button, header, DisplayNameOf(collection), RegisteredEntries.CountOptions(collection) == 0);
+        return new(button, header, DisplayNameOf(collection), !RegisteredEntries.OptionsOf(collection).Any());
     }
 
     private void Refresh()
@@ -204,10 +204,10 @@ internal sealed class ModListOrganizer : MonoBehaviour
     {
         var selectedButton = _navigation.SelectedButton();
         var visibleEntries = SortEntries(_entries.Where(IsVisible)).ToList();
-        HashSet<ModListEntry> visibleSet = [.. visibleEntries];
+        HashSet<ModListButton> visibleButtons = [.. visibleEntries.Select(entry => entry.Button)];
 
         foreach (var entry in _entries)
-            entry.Button.gameObject.SetActive(visibleSet.Contains(entry));
+            entry.Button.gameObject.SetActive(visibleButtons.Contains(entry.Button));
 
         for (var index = 0; index < visibleEntries.Count; index++)
             visibleEntries[index].Button.transform.SetSiblingIndex(index);

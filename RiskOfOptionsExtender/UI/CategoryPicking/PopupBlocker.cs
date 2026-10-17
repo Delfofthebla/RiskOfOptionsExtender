@@ -14,19 +14,15 @@ internal sealed class PopupBlocker : MonoBehaviour, IPointerDownHandler, IPointe
 
     public static PopupBlocker Create(Transform popup, Action onPressed)
     {
-        var blockerObject = new GameObject("Click Blocker", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster), typeof(CanvasRenderer), typeof(Image));
-        blockerObject.layer = popup.gameObject.layer;
-
-        var rect = (RectTransform)blockerObject.transform;
-        rect.SetParent(popup, false);
+        var rect = UiObjects.Create("Click Blocker", popup, typeof(Canvas), typeof(GraphicRaycaster), typeof(CanvasRenderer), typeof(Image));
         rect.SetAsFirstSibling();
         rect.AnchorAt(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
         rect.sizeDelta = new Vector2(CoverSize, CoverSize);
 
-        blockerObject.GetComponent<Image>().color = Color.clear;
+        rect.GetComponent<Image>().color = Color.clear;
 
-        var blocker = blockerObject.AddComponent<PopupBlocker>();
-        blocker._canvas = blockerObject.GetComponent<Canvas>();
+        var blocker = rect.gameObject.AddComponent<PopupBlocker>();
+        blocker._canvas = rect.GetComponent<Canvas>();
         blocker._onPressed = onPressed;
         return blocker;
     }

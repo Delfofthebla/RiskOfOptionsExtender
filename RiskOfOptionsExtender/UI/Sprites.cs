@@ -33,7 +33,7 @@ internal static class Sprites
     {
         using var stream = typeof(Sprites).Assembly.GetManifestResourceStream(name);
         using var memory = new MemoryStream();
-        stream!.CopyTo(memory);
+        stream.CopyTo(memory);
         return memory.ToArray();
     }
 }

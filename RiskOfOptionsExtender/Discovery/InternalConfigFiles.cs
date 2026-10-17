@@ -7,13 +7,13 @@ namespace RiskOfOptionsExtender.Discovery;
 
 // Some mods keep a second config file as private bookkeeping, such as the "auto config sync" code shared by
 // StageAesthetic, Sandswept and ArtificerExtended, which stores the previous version's defaults in a *.Backup.cfg
-// marked "DO NOT MODIFY". Those files aren't settings and must not be edited from the menu.
+// marked "DO NOT MODIFY".
 internal static class InternalConfigFiles
 {
     private static readonly string BackupSuffix = "Backup";
     private static readonly string DoNotModifyMarker = "DO NOT MODIFY";
 
-    public static bool Contains(ConfigFile file) => UnsavedConfigFiles.Contains(file) || IsBackup(file) || IsMarkedDoNotModify(file);
+    public static bool Contains(ConfigFile file) => UnsavedConfigFile.IsUnsaved(file) || IsBackup(file) || IsMarkedDoNotModify(file);
 
     private static bool IsBackup(ConfigFile file) => Path.GetFileNameWithoutExtension(file.ConfigFilePath).EndsWith(BackupSuffix, StringComparison.OrdinalIgnoreCase);
 

@@ -31,7 +31,7 @@ internal static class ModMetadata
             if (!collection.icon && !collection.iconPrefab)
                 ApplyIcon(plugin, collection);
 
-            if (Language.IsTokenInvalid(collection.DescriptionToken))
+            if (!HasDescription(collection))
                 ApplyDescription(plugin, collection);
         }
         catch (Exception exception) when (!IncompatibilityException.Indicates(exception))
@@ -39,6 +39,9 @@ internal static class ModMetadata
             RiskOfOptionsExtenderPlugin.Log.LogDebug($"Could not add the icon or description of {plugin.Metadata.Name}: {exception.Message}");
         }
     }
+
+    // Risk Of Options serves its tokens through a language hook, so Language.IsTokenInvalid reports every one of them as missing.
+    private static bool HasDescription(OptionCollection collection) => Language.GetString(collection.DescriptionToken) != collection.DescriptionToken;
 
     private static void ApplyIcon(PluginInfo plugin, OptionCollection collection)
     {

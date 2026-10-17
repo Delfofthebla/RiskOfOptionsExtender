@@ -13,7 +13,9 @@ internal sealed class ModListToolbar : MonoBehaviour
 {
     private static readonly float Height = 64f;
     private static readonly float Gap = 8f;
+    private static readonly int Padding = 8;
     private static readonly float SortButtonWidth = 96f;
+    private static readonly float SortLabelFontSize = 24f;
 
     private ConfigEntry<ModSortOrder> _sortOrder;
     private TMP_Text _sortLabel;
@@ -26,7 +28,7 @@ internal sealed class ModListToolbar : MonoBehaviour
         var background = PanelBackground.Of(scrollView);
         var styleSource = panel.ModListButton.GetRequiredComponentInChildren<TMP_Text>();
 
-        var toolbarObject = new GameObject("Mod List Toolbar", typeof(RectTransform));
+        var toolbarObject = UiObjects.Create("Mod List Toolbar", modListPanel).gameObject;
         try
         {
             var toolbar = toolbarObject.AddComponent<ModListToolbar>();
@@ -56,11 +58,7 @@ internal sealed class ModListToolbar : MonoBehaviour
         ConfigEntry<ModSortOrder> sortOrder,
         UnityAction<string> onSearchChanged)
     {
-        var modListPanel = panel.ModListPanel.transform;
-        gameObject.layer = modListPanel.gameObject.layer;
-
         var rect = (RectTransform)transform;
-        rect.SetParent(modListPanel, false);
         rect.anchorMin = new Vector2(0, 1);
         rect.anchorMax = Vector2.one;
         rect.pivot = new Vector2(0.5f, 1);
@@ -70,8 +68,8 @@ internal sealed class ModListToolbar : MonoBehaviour
         background.CopyInto(rect);
 
         var layout = gameObject.AddComponent<HorizontalLayoutGroup>();
-        layout.padding = new RectOffset(8, 8, 8, 8);
-        layout.spacing = 8;
+        layout.padding = new RectOffset(Padding, Padding, Padding, Padding);
+        layout.spacing = Gap;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
@@ -97,7 +95,7 @@ internal sealed class ModListToolbar : MonoBehaviour
         layoutElement.preferredWidth = SortButtonWidth;
 
         _sortLabel = buttonObject.GetRequiredComponentInChildren<TMP_Text>();
-        _sortLabel.fontSize = 24;
+        _sortLabel.fontSize = SortLabelFontSize;
         _sortLabel.alignment = TextAlignmentOptions.Center;
     }
 

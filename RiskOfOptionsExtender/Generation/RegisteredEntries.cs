@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using BepInEx.Configuration;
 using RiskOfOptions;
 using RiskOfOptions.Containers;
@@ -11,14 +12,13 @@ internal static class RegisteredEntries
     public static HashSet<ConfigEntryBase> Collect()
     {
         HashSet<ConfigEntryBase> entries = [];
-        foreach (var collection in ModSettingsManager.OptionCollection)
-        {
-            foreach (var option in OptionsOf(collection))
-                AddEntryOf(option, entries);
-        }
+        foreach (var option in AllOptions())
+            AddEntryOf(option, entries);
 
         return entries;
     }
+
+    public static IEnumerable<BaseOption> AllOptions() => ModSettingsManager.OptionCollection.SelectMany(OptionsOf);
 
     public static IEnumerable<BaseOption> OptionsOf(OptionCollection collection)
     {
@@ -28,15 +28,6 @@ internal static class RegisteredEntries
             for (var optionIndex = 0; optionIndex < category.OptionCount; optionIndex++)
                 yield return category[optionIndex];
         }
-    }
-
-    public static int CountOptions(OptionCollection collection)
-    {
-        var count = 0;
-        for (var categoryIndex = 0; categoryIndex < collection.CategoryCount; categoryIndex++)
-            count += collection[categoryIndex].OptionCount;
-
-        return count;
     }
 
     private static void AddEntryOf(BaseOption option, HashSet<ConfigEntryBase> entries)

@@ -23,15 +23,12 @@ internal sealed class PinToggle : PointerTarget
     {
         var label = (RectTransform)button.transform.FindRequired("ButtonText");
 
-        var pinObject = new GameObject("Pin Toggle", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        pinObject.layer = button.gameObject.layer;
-
-        var rect = (RectTransform)pinObject.transform;
-        rect.SetParent(button.transform, false);
+        var rect = UiObjects.Create("Pin Toggle", button.transform, typeof(CanvasRenderer), typeof(Image));
         rect.AnchorAt(new Vector2(1, 0.5f), new Vector2(1, 0.5f));
         rect.sizeDelta = new Vector2(Size, Size);
         rect.anchoredPosition = new Vector2(-RightInset, 0);
 
+        var pinObject = rect.gameObject;
         var toggle = pinObject.AddComponent<PinToggle>();
         toggle._image = pinObject.GetComponent<Image>();
         toggle._image.sprite = Sprites.PinStar;

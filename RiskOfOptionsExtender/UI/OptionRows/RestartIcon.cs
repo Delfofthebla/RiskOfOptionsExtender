@@ -45,22 +45,18 @@ internal sealed class RestartIcon : MonoBehaviour
         var sprite = LoadSprite();
         var label = text.rectTransform;
 
-        var iconObject = new GameObject("Restart Required Icon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        iconObject.layer = row.gameObject.layer;
-
-        var rect = (RectTransform)iconObject.transform;
-        rect.SetParent(label, false);
+        var rect = UiObjects.Create("Restart Required Icon", label, typeof(CanvasRenderer), typeof(Image));
         rect.AnchorAt(new Vector2(0, 0.5f), new Vector2(0, 0.5f));
         rect.sizeDelta = new Vector2(Size, Size);
         rect.anchoredPosition = new Vector2(-(Size + Gap), 0);
 
-        var image = iconObject.GetComponent<Image>();
+        var image = rect.GetComponent<Image>();
         image.sprite = sprite;
         image.preserveAspect = true;
         image.color = Tint;
         image.raycastTarget = false;
 
-        var icon = iconObject.AddComponent<RestartIcon>();
+        var icon = rect.gameObject.AddComponent<RestartIcon>();
         icon._label = label;
         _liveIcons.Add(icon);
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,6 +18,7 @@ internal sealed class CategoryPickerPopup : MonoBehaviour
     private static readonly int SortingOrder = 30000;
 
     private readonly List<PickerItem> _items = [];
+    private IReadOnlyList<PickerChoice> _shownChoices = [];
     private RectTransform _rect;
     private RectTransform _content;
     private ScrollRect _scroll;
@@ -33,22 +35,28 @@ internal sealed class CategoryPickerPopup : MonoBehaviour
         var background = PanelBackground.Of(panelScrollView);
         var scrollbarTemplate = panelScrollView.FindRequired("Scrollbar Vertical").gameObject;
 
-        var root = new GameObject("Category Picker Popup", typeof(RectTransform));
+        var root = UiObjects.Create("Category Picker Popup", parent).gameObject;
         root.SetActive(false);
-        root.layer = parent.gameObject.layer;
-        root.transform.SetParent(parent, false);
 
-        var popup = root.AddComponent<CategoryPickerPopup>();
-        popup._anchorButton = anchorButton;
-        popup._styleSource = styleSource;
-        popup._onSelected = onSelected;
-        popup.Build(background, scrollbarTemplate);
-        return popup;
+        try
+        {
+            var popup = root.AddComponent<CategoryPickerPopup>();
+            popup._anchorButton = anchorButton;
+            popup._styleSource = styleSource;
+            popup._onSelected = onSelected;
+            popup.Build(background, scrollbarTemplate);
+            return popup;
+        }
+        catch
+        {
+            Destroy(root);
+            throw;
+        }
     }
 
     public void Open(IReadOnlyList<PickerChoice> choices, int currentCategory)
     {
-        RebuildItems(choices);
+        ShowChoices(choices);
         gameObject.SetActive(true);
         DrawAboveSiblingCanvases();
 
@@ -60,7 +68,7 @@ internal sealed class CategoryPickerPopup : MonoBehaviour
 
     public void Close() => gameObject.SetActive(false);
 
-    public void MarkCurrent(int categoryIndex)
+    private void MarkCurrent(int categoryIndex)
     {
         foreach (var item in _items)
             item.SetCurrent(item.CategoryIndex == categoryIndex);
@@ -85,31 +93,25 @@ internal sealed class CategoryPickerPopup : MonoBehaviour
         background.CopyInto(_rect);
         _blocker = PopupBlocker.Create(_rect, Close);
 
-        var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
-        viewport.layer = gameObject.layer;
-        var viewportRect = (RectTransform)viewport.transform;
-        viewportRect.SetParent(_rect, false);
-        viewportRect.Stretch(new Vector2(Padding, Padding), new Vector2(Padding + ScrollbarWidth, Padding));
+        var viewport = UiObjects.Create("Viewport", _rect, typeof(RectMask2D));
+        viewport.Stretch(new Vector2(Padding, Padding), new Vector2(Padding + ScrollbarWidth, Padding));
 
-        var content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-        content.layer = gameObject.layer;
-        _content = (RectTransform)content.transform;
-        _content.SetParent(viewportRect, false);
+        _content = UiObjects.Create("Content", viewport, typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
         _content.anchorMin = new Vector2(0, 1);
         _content.anchorMax = Vector2.one;
         _content.pivot = new Vector2(0.5f, 1);
         _content.sizeDelta = Vector2.zero;
 
-        var layout = content.GetComponent<VerticalLayoutGroup>();
+        var layout = _content.GetComponent<VerticalLayoutGroup>();
         layout.spacing = Spacing;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
-        content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        _content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         _scroll = gameObject.AddComponent<ScrollRect>();
-        _scroll.viewport = viewportRect;
+        _scroll.viewport = viewport;
         _scroll.content = _content;
         _scroll.horizontal = false;
         _scroll.movementType = ScrollRect.MovementType.Clamped;
@@ -135,8 +137,12 @@ internal sealed class CategoryPickerPopup : MonoBehaviour
         _scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
     }
 
-    private void RebuildItems(IReadOnlyList<PickerChoice> choices)
+    private void ShowChoices(IReadOnlyList<PickerChoice> choices)
     {
+        if (choices.SequenceEqual(_shownChoices))
+            return;
+
+        _shownChoices = choices;
         _items.Clear();
         for (var index = _content.childCount - 1; index >= 0; index--)
             DestroyImmediate(_content.GetChild(index).gameObject);

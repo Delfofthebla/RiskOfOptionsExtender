@@ -69,9 +69,7 @@ internal sealed class PickerItem : PointerTarget
 
     private static GameObject CreateRow(string name, Transform parent, float height)
     {
-        var row = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement));
-        row.layer = parent.gameObject.layer;
-        row.transform.SetParent(parent, false);
+        var row = UiObjects.Create(name, parent, typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement)).gameObject;
         row.GetComponent<Image>().color = IdleColor;
 
         var layoutElement = row.GetComponent<LayoutElement>();

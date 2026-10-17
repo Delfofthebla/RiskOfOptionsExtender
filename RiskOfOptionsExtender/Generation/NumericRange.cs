@@ -4,15 +4,11 @@ using BepInEx.Configuration;
 
 namespace RiskOfOptionsExtender.Generation;
 
-internal sealed class NumericRange(decimal min, decimal max)
+internal readonly record struct NumericRange(decimal Min, decimal Max)
 {
-    public decimal Min { get; } = min;
-
-    public decimal Max { get; } = max;
-
     public bool FitsInInt => Min >= int.MinValue && Max <= int.MaxValue;
 
-    public static NumericRange Of(ConfigEntryBase entry)
+    public static NumericRange? Of(ConfigEntryBase entry)
     {
         var acceptableValues = entry.Description.AcceptableValues;
         var type = acceptableValues?.GetType();
@@ -21,8 +17,8 @@ internal sealed class NumericRange(decimal min, decimal max)
 
         try
         {
-            var min = Convert.ToDecimal(type.GetProperty("MinValue")!.GetValue(acceptableValues), CultureInfo.InvariantCulture);
-            var max = Convert.ToDecimal(type.GetProperty("MaxValue")!.GetValue(acceptableValues), CultureInfo.InvariantCulture);
+            var min = Convert.ToDecimal(type.GetProperty("MinValue").GetValue(acceptableValues), CultureInfo.InvariantCulture);
+            var max = Convert.ToDecimal(type.GetProperty("MaxValue").GetValue(acceptableValues), CultureInfo.InvariantCulture);
             return min < max
                 ? new(min, max)
                 : null;
@@ -32,4 +28,8 @@ internal sealed class NumericRange(decimal min, decimal max)
             return null;
         }
     }
+
+    public AcceptableValueRange<float> ToFloatRange() => new((float)Min, (float)Max);
+
+    public AcceptableValueRange<int> ToIntRange() => new((int)Min, (int)Max);
 }

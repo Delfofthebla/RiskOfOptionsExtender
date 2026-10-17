@@ -13,7 +13,7 @@ internal static class ConfigFileRegistry
 
     private static Func<IReadOnlyList<(ConfigFile File, string OwnerGuid, Assembly CreatingAssembly)>> _readOrigins = () => [];
 
-    public static IEnumerable<ConfigFileOrigin> Origins => _readOrigins().Select(origin => new ConfigFileOrigin(origin.File, origin.OwnerGuid, origin.CreatingAssembly));
+    public static IReadOnlyList<(ConfigFile File, string OwnerGuid, Assembly CreatingAssembly)> Origins => _readOrigins();
 
     public static void Install()
     {

@@ -41,5 +41,5 @@ internal sealed class GuidListSetting
         Changed?.Invoke();
     }
 
-    private static HashSet<string> Parse(string commaSeparated) => [.. commaSeparated.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(guid => guid.Trim())];
+    private static HashSet<string> Parse(string commaSeparated) => [.. commaSeparated.Split(',').Select(guid => guid.Trim()).Where(guid => guid.Length > 0)];
 }

@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <ThunderstoreTeam>Delfofthebla</ThunderstoreTeam>
-    <ProfileName Condition="'$(ProfileName)' == ''">Main</ProfileName>
+    <ProfileName Condition="'$(ProfileName)' == ''">Current</ProfileName>
     <ProfileDir Condition="'$(ProfileDir)' == ''">$(APPDATA)\r2modmanPlus-local\RiskOfRain2\profiles\$(ProfileName)\BepInEx</ProfileDir>
     <ProfilePluginsDir>$(ProfileDir)\plugins</ProfilePluginsDir>
   </PropertyGroup>

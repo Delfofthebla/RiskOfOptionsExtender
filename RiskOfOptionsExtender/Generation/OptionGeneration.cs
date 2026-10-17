@@ -54,9 +54,10 @@ internal static class OptionGeneration
         foreach (var plugin in pluginsWithFillableEntries.Where(_settings.ShouldFillIn))
             FillIn(plugin, filesByGuid[plugin.Metadata.GUID], registered);
 
-        var pluginsWithFillIn = pluginsWithFillableEntries.Where(plugin => _filledGuids.Contains(plugin.Metadata.GUID) || HasFillableEntries(filesByGuid[plugin.Metadata.GUID], registered));
-        _skipToggles.AddFor(pluginsWithFillIn);
+        _skipToggles.AddFor(pluginsWithFillableEntries.Where(IsSkippedOrFilledIn));
     }
+
+    private static bool IsSkippedOrFilledIn(PluginInfo plugin) => !_settings.ShouldFillIn(plugin) || _filledGuids.Contains(plugin.Metadata.GUID);
 
     private static void ApplyMetadata()
     {
@@ -102,12 +103,18 @@ internal static class OptionGeneration
     {
         var modGuid = plugin.Metadata.GUID;
         var fileLabel = Path.GetFileNameWithoutExtension(file.ConfigFilePath);
-        var category = CategoryFor(modGuid, entry.Definition.Section, file, fileLabel, hasMultipleFiles);
+        var category = CategoryFor(modGuid, entry.Definition.Section, file, fileLabel);
         var details = new OptionDetails(category, entry.Definition.Key, entry.Description.Description, restartRequired);
 
         var option = OptionFactory.Create(entry, details);
-        if (option == null || !TryClaimUniqueName(modGuid, option, fileLabel))
+        if (option == null)
             return false;
+
+        if (!TryClaimUniqueName(modGuid, option, fileLabel))
+        {
+            ProxyEntries.Discard(entry);
+            return false;
+        }
 
         ModSettingsManager.AddOption(option, modGuid, plugin.Metadata.Name);
         _generatedOptions.Add(option);
@@ -128,13 +135,10 @@ internal static class OptionGeneration
         return RegisteredEntries.OptionsOf(ModSettingsManager.OptionCollection[modGuid]).Any(option => !_generatedOptions.Contains(option));
     }
 
-    private static string CategoryFor(string modGuid, string section, ConfigFile file, string fileLabel, bool hasMultipleFiles)
+    private static string CategoryFor(string modGuid, string section, ConfigFile file, string fileLabel)
     {
         if (string.IsNullOrEmpty(section))
             section = FallbackCategory;
-
-        if (!hasMultipleFiles)
-            return section;
 
         if (!_sectionFiles.TryGetValue((modGuid, section), out var owningFile))
         {
