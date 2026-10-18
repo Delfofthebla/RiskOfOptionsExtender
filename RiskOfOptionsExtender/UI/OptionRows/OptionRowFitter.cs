@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RiskOfOptions.Components.Options;
 using RiskOfOptions.Components.Panel;
 using RiskOfOptionsExtender.Resilience;
+using RoR2.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,16 +15,19 @@ internal sealed class OptionRowFitter : MonoBehaviour
 {
     private static readonly float GapBeforeControl = 12f;
     private static readonly float CheckboxRightInset = 12f;
-    private static readonly HashSet<string> DecorationNames = ["BaseOutline", "HoverOutline", "Mod Settings Indicator"];
     private static readonly HashSet<OptionRowFitter> _liveFitters = [];
+    private static int _layoutSettledFrame = -1;
 
+    private readonly List<Graphic> _controlGraphics = [];
     private RectTransform _row;
     private RectTransform _label;
     private TMP_Text _text;
     private Image _checkbox;
     private FeatureGuard _guard;
+    private Action _fitIfLayoutChanged;
     private bool _fitted;
     private OriginalRowState _original;
+    private RowLayout _fittedLayout;
     private RectTransform _movedCheckboxContainer;
     private Vector2 _checkboxContainerOriginalPosition;
     private LayoutElement _addedLayoutElement;
@@ -59,6 +64,8 @@ internal sealed class OptionRowFitter : MonoBehaviour
         _liveFitters.Add(fitter);
     }
 
+    private void Awake() => _fitIfLayoutChanged = FitIfLayoutChanged;
+
     private void OnDestroy() => _liveFitters.Remove(this);
 
     private void Revert()
@@ -89,37 +96,97 @@ internal sealed class OptionRowFitter : MonoBehaviour
         if (_row.rect.width < 1)
             return;
 
-        enabled = false;
-        _guard.Run("fit an option row", Fit);
+        _guard.Run("fit an option row", _fitIfLayoutChanged);
+    }
+
+    private void FitIfLayoutChanged()
+    {
+        if (!_fitted)
+            FitFirstTime();
+        else if (!_fittedLayout.Matches(CurrentLayout()))
+            Fit();
+    }
+
+    private void FitFirstTime()
+    {
+        SettleCanvasLayout();
+        _original = OriginalRowState.Capture(_row, _label, _text);
+        _fitted = true;
+
+        CollectControlGraphics();
+        Fit();
+    }
+
+    // Rows Risk Of Options copies from the game's settings panel arrive already sized, before their nested layout groups place
+    // their controls.
+    private static void SettleCanvasLayout()
+    {
+        if (_layoutSettledFrame == Time.frameCount)
+            return;
+
+        _layoutSettledFrame = Time.frameCount;
+        Canvas.ForceUpdateCanvases();
+    }
+
+    private void CollectControlGraphics()
+    {
+        HashSet<Graphic> movingGraphics = [.. HoverImages(), .. SliderHandles()];
+        _controlGraphics.AddRange(_row.GetComponentsInChildren<Graphic>().Where(graphic => IsInsideControl(graphic.transform) && !movingGraphics.Contains(graphic)));
+    }
+
+    private IEnumerable<Graphic> HoverImages() => _row.GetComponentsInChildren<HGButton>().Select(button => button.imageOnHover);
+
+    private IEnumerable<Graphic> SliderHandles() => _row.GetComponentsInChildren<Slider>()
+        .Where(slider => slider.handleRect)
+        .SelectMany(slider => slider.handleRect.GetComponentsInChildren<Graphic>());
+
+    private bool IsInsideControl(Transform descendant)
+    {
+        var control = descendant.GetComponentInParent<Selectable>();
+        return control && control.transform != _row && control.transform.IsChildOf(_row);
     }
 
     private void Fit()
     {
-        _original = OriginalRowState.Capture(_row, _label, _text);
-        _fitted = true;
-
         if (_checkbox)
             AlignCheckboxWithOtherControls();
 
-        if (_label.anchorMax.x > 0.5f)
-            EndLabelBeforeControls();
+        var controlsLeft = ControlsLeft();
+        if (controlsLeft < float.MaxValue)
+            EndLabelBeforeControls(controlsLeft);
 
         FitText();
+        _fittedLayout = CurrentLayout();
     }
 
-    // Risk Of Options' checkbox row places the box about 100px in from the right edge, where every other control ends a
-    // few pixels from it.
+    private RowLayout CurrentLayout() => new(_row.rect.width, _label.rect.width, ControlsLeft(), _text.textInfo.lineCount);
+
+    private float ControlsLeft()
+    {
+        var left = float.MaxValue;
+        foreach (var graphic in _controlGraphics)
+        {
+            if (graphic)
+                left = Mathf.Min(left, _row.InverseTransformPoint(graphic.rectTransform.WorldBottomLeft()).x);
+        }
+
+        return left;
+    }
+
     private void AlignCheckboxWithOtherControls()
     {
         var container = ChildOfRowContaining(_checkbox.transform);
         if (!container)
             return;
 
+        if (!_movedCheckboxContainer)
+        {
+            _movedCheckboxContainer = container;
+            _checkboxContainerOriginalPosition = container.anchoredPosition;
+        }
+
         var checkboxRight = _row.InverseTransformPoint(_checkbox.rectTransform.WorldTopRight()).x;
         var shift = _row.rect.xMax - CheckboxRightInset - checkboxRight;
-
-        _checkboxContainerOriginalPosition = container.anchoredPosition;
-        _movedCheckboxContainer = container;
         container.anchoredPosition += new Vector2(shift, 0);
     }
 
@@ -132,25 +199,11 @@ internal sealed class OptionRowFitter : MonoBehaviour
         return current as RectTransform;
     }
 
-    private void EndLabelBeforeControls()
+    private void EndLabelBeforeControls(float controlsLeft)
     {
-        var controlsLeft = float.MaxValue;
-        foreach (Transform child in _row)
-        {
-            if (child == _label || !child.gameObject.activeInHierarchy || DecorationNames.Contains(child.name))
-                continue;
-
-            foreach (var graphic in child.GetComponentsInChildren<Graphic>())
-                controlsLeft = Mathf.Min(controlsLeft, _row.InverseTransformPoint(graphic.rectTransform.WorldBottomLeft()).x);
-        }
-
-        if (controlsLeft == float.MaxValue)
-            return;
-
-        var labelRight = _row.rect.xMax + _label.offsetMax.x;
+        var labelRight = _row.InverseTransformPoint(_label.WorldTopRight()).x;
         var allowedRight = controlsLeft - GapBeforeControl;
-        if (allowedRight < labelRight)
-            _label.offsetMax = new Vector2(_label.offsetMax.x - (labelRight - allowedRight), _label.offsetMax.y);
+        _label.offsetMax += new Vector2(allowedRight - labelRight, 0);
     }
 
     private void FitText()
@@ -159,20 +212,27 @@ internal sealed class OptionRowFitter : MonoBehaviour
         _text.enableWordWrapping = true;
         _text.overflowMode = TextOverflowModes.Overflow;
 
-        var neededHeight = _text.GetPreferredValues(_text.text, _label.rect.width, 0).y;
-        var missingHeight = neededHeight - _label.rect.height;
-        if (missingHeight > 0)
-            GrowRow(missingHeight);
+        // GetPreferredValues can wrap a name onto one line fewer than TextMeshPro renders it.
+        _text.ForceMeshUpdate();
+        var labelInset = _row.rect.height - _label.rect.height;
+        FitRowHeight(_text.textBounds.size.y + labelInset);
     }
 
-    private void GrowRow(float extraHeight)
+    private void FitRowHeight(float neededHeight)
     {
-        if (!_row.TryGetComponent<LayoutElement>(out var layoutElement))
+        var hasLayoutElement = _row.TryGetComponent<LayoutElement>(out var layoutElement);
+        if (neededHeight <= _original.RowHeight)
+        {
+            if (hasLayoutElement)
+                _original.RestoreHeight(layoutElement);
+
+            return;
+        }
+
+        if (!hasLayoutElement)
             layoutElement = _addedLayoutElement = _row.gameObject.AddComponent<LayoutElement>();
 
-        var height = _row.rect.height + extraHeight;
-        layoutElement.minHeight = Mathf.Max(layoutElement.minHeight, height);
-        layoutElement.preferredHeight = Mathf.Max(layoutElement.preferredHeight, height);
-        LayoutRebuilder.MarkLayoutForRebuild((RectTransform)_row.parent);
+        layoutElement.minHeight = Mathf.Max(_original.MinHeight, neededHeight);
+        layoutElement.preferredHeight = Mathf.Max(_original.PreferredHeight, neededHeight);
     }
 }

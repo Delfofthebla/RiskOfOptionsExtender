@@ -19,7 +19,7 @@ internal static class OptionIdentifiers
             throw new IncompatibilityException($"Risk Of Options identified an option as \"{option.Identifier}\" instead of \"{predicted}\", so duplicate options can no longer be detected.");
     }
 
-    // Mirrors ModSettingsManager.AddOption. Risk Of Options adds an option to its category before rejecting a duplicate
-    // identifier, which leaves a broken row behind, so duplicates have to be caught before adding.
+    // Mirrors ModSettingsManager.AddOption, which adds an option to its category before rejecting a duplicate identifier,
+    // leaving a broken row behind.
     private static string Predict(string modGuid, string category, string name, string optionTypeName) => $"{modGuid}.{category}.{name}.{optionTypeName}".Replace(" ", "_").ToUpper();
 }

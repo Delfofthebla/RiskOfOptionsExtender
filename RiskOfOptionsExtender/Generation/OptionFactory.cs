@@ -74,7 +74,7 @@ internal static class OptionFactory
         return compatible;
     }
 
-    // RiskOfOptions' dropdown treats an enum's numeric value as its position in the list.
+    // Risk Of Options' dropdown treats an enum's numeric value as its position in the list.
     private static bool IsEnumWithPositionalValues(Type type)
     {
         if (!type.IsEnum || type.IsDefined(typeof(FlagsAttribute), false))

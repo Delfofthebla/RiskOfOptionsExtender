@@ -1,3 +1,12 @@
+#### 1.1.0
+
+**Changed**
+- Setting names next to a number box, slider or dropdown now use the room up to that control, instead of wrapping halfway across the row.
+
+**Fixed**
+- Settings with a button no longer squash their name into a column one letter wide.
+- Long setting names no longer spill out of their row when a word only just barely doesn't fit on its line.
+
 #### 1.0.1
 
 Updated for the Hallowed Concepts update. No noticeable issues or need to actually upgrade, tbh.

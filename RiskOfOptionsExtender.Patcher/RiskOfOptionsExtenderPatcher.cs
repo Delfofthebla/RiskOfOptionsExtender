@@ -8,7 +8,7 @@ namespace RiskOfOptionsExtender.Patcher;
 
 public static class RiskOfOptionsExtenderPatcher
 {
-    // BepInEx only loads a patcher that declares TargetDLLs and Patch; this one patches nothing and only runs Initialize.
+    // BepInEx only loads a patcher that declares TargetDLLs and Patch.
     public static IEnumerable<string> TargetDLLs { get; } = [];
 
     public static bool IsWatching => ConfigFileWatch.IsInstalled;

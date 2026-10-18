@@ -4,15 +4,17 @@ using UnityEngine.UI;
 
 namespace RiskOfOptionsExtender.UI.OptionRows;
 
-internal readonly record struct OriginalRowState(Vector2 LabelOffsetMax, bool WordWrapping, TextOverflowModes OverflowMode, bool AutoSizing, float MinHeight, float PreferredHeight)
+internal readonly record struct OriginalRowState(Vector2 LabelOffsetMax, bool WordWrapping, TextOverflowModes OverflowMode, bool AutoSizing, float RowHeight, float MinHeight, float PreferredHeight)
 {
+    private static readonly float UnsetHeight = -1f;
+
     public static OriginalRowState Capture(RectTransform row, RectTransform label, TMP_Text text)
     {
         var hasLayoutElement = row.TryGetComponent<LayoutElement>(out var layoutElement);
-        var minHeight = hasLayoutElement ? layoutElement.minHeight : 0;
-        var preferredHeight = hasLayoutElement ? layoutElement.preferredHeight : 0;
+        var minHeight = hasLayoutElement ? layoutElement.minHeight : UnsetHeight;
+        var preferredHeight = hasLayoutElement ? layoutElement.preferredHeight : UnsetHeight;
 
-        return new(label.offsetMax, text.enableWordWrapping, text.overflowMode, text.enableAutoSizing, minHeight, preferredHeight);
+        return new(label.offsetMax, text.enableWordWrapping, text.overflowMode, text.enableAutoSizing, row.rect.height, minHeight, preferredHeight);
     }
 
     public void RestoreLabel(RectTransform label, TMP_Text text)

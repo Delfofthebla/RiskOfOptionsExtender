@@ -5,9 +5,6 @@ using PluginInfo = BepInEx.PluginInfo;
 
 namespace RiskOfOptionsExtender.Generation;
 
-// OptionGenerator fills in every plugin that doesn't depend on Risk Of Options (and itself), and deletes a plugin's whole
-// page while that plugin is switched off in its "Enabled" section. Its prefix and ours run in no guaranteed order, so
-// overlapping work would add settings twice; those plugins are left to it instead.
 internal static class OptionGeneratorCoexistence
 {
     private static readonly string Guid = "local.option.generator";

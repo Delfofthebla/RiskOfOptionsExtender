@@ -5,9 +5,6 @@ using BepInEx.Configuration;
 
 namespace RiskOfOptionsExtender.Discovery;
 
-// Some mods keep a second config file as private bookkeeping, such as the "auto config sync" code shared by
-// StageAesthetic, Sandswept and ArtificerExtended, which stores the previous version's defaults in a *.Backup.cfg
-// marked "DO NOT MODIFY".
 internal static class InternalConfigFiles
 {
     private static readonly string BackupSuffix = "Backup";

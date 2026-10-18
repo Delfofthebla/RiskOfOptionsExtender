@@ -1,6 +1,6 @@
 {
   "name": "Risk_Of_Options_Extender",
-  "version_number": "1.0.1",
+  "version_number": "1.1.0",
   "website_url": "https://github.com/Delfofthebla/RiskOfOptionsExtender",
   "description": "Puts every mod's settings in the Risk Of Options menu, including the ones mods leave out, and adds search, sorting, pinning and a tab picker to the mod list.",
   "dependencies": [

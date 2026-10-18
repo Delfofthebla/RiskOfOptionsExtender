@@ -4,7 +4,7 @@
         <RootNamespace>RiskOfOptionsExtender</RootNamespace>
         <ThunderstorePackageName>Risk_Of_Options_Extender</ThunderstorePackageName>
         <Author>Delfofthebla</Author>
-        <Version>1.0.1</Version>
+        <Version>1.1.0</Version>
         <PluginVersionSource>RiskOfOptionsExtenderPlugin.cs</PluginVersionSource>
     </PropertyGroup>
 

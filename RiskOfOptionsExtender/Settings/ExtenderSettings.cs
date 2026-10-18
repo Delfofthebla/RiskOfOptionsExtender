@@ -66,7 +66,6 @@ internal sealed class ExtenderSettings
     public static void AddOwnOption(BaseOption option) => ModSettingsManager.AddOption(option, RiskOfOptionsExtenderPlugin.GUID, RiskOfOptionsExtenderPlugin.NAME);
 
     // BepInEx keeps entries it read from the file but that were never bound, and writes them back on every save.
-    // Every setting this mod uses is bound above, so anything left over is from an older layout.
     private static void RemoveUnboundEntries(ConfigFile config)
     {
         var orphanedEntries = typeof(ConfigFile).GetProperty("OrphanedEntries", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(config) as Dictionary<ConfigDefinition, string>;

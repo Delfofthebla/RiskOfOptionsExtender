@@ -156,8 +156,7 @@ internal sealed class CategoryPicker : MonoBehaviour
             _guard.Run("lay out the category tabs", () => _layoutPending = !TryFitPageOfTabs());
     }
 
-    // The tab strip has its own canvas, which escapes the viewport's clipping, so the viewport is sized to exactly one
-    // page of tabs instead of relying on the clip to hide the overflow.
+    // The tab strip has its own canvas, which escapes the viewport's clipping.
     private bool TryFitPageOfTabs()
     {
         var scrollViewWidth = _scrollView.rect.width;

@@ -74,7 +74,7 @@ internal sealed class CategoryPickerPopup : MonoBehaviour
             item.SetCurrent(item.CategoryIndex == categoryIndex);
     }
 
-    // Unity discards a nested canvas's sorting override while its object is inactive, so it is reapplied on every open.
+    // Unity discards a nested canvas's sorting override while its object is inactive.
     private void DrawAboveSiblingCanvases()
     {
         _canvas.overrideSorting = true;
